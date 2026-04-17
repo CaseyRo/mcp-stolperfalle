@@ -6,7 +6,7 @@ type: project
 
 The `km` binary is not symlinked into PATH on this machine. Use the full path:
 
-`/opt/homebrew/Cellar/km/2.0.0/bin/km`
+`/opt/homebrew/Cellar/km/2.1.1/bin/km`
 
 Config is at `~/.config/komodo/komodo.cli.toml` and points to `http://100.114.39.108:9120` (werkstatt-1 Tailscale IP, Komodo core port 9120).
 
