@@ -1,5 +1,5 @@
 {
-  "description": "Stolperstein experiential-knowledge hooks: query-on-error + reflect-nudge-at-stop.",
+  "description": "Stolperstein experiential-knowledge hooks: pull-discipline at session start, query-on-error, reflect-nudge-at-stop.",
   "hooks": {
     "UserPromptSubmit": [
       {
@@ -26,7 +26,7 @@
     ],
     "PostToolUseFailure": [
       {
-        "matcher": "Bash",
+        "matcher": "*",
         "hooks": [
           {
             "type": "command",
@@ -43,6 +43,17 @@
             "type": "command",
             "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/handlers/on_stop.py\"",
             "timeout": 10
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/handlers/on_session_start.py\"",
+            "timeout": 5
           }
         ]
       }

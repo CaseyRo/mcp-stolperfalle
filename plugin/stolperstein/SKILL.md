@@ -85,11 +85,13 @@ status(debug=True)    # operator mode — adds schema_version, proposer_did, mig
 
 ## Hooks active in this project
 
-Three hooks ship with the plugin:
+Four hooks ship with the plugin:
+
+- **`SessionStart`** — injects a one-line static reminder that the KB exists and when to pull from it (query before non-trivial work, confirm/flag afterwards). No network call.
 
 - **`UserPromptSubmit`** — when your prompt contains a *structured* error signal (exception class name, traceback marker, non-zero exit code mention, HTTP status string, `fatal:`/`panic:`/`Error:` prefix), the hook runs `query()` in the background and injects a sanitized, temporally-qualified hint if the top match has confidence ≥ 0.5.
   - Conversational prose like "my regex failed" does NOT trigger — only structured signals do.
-- **`PostToolUse` (matcher=`Bash`)** — when a Bash tool call exits non-zero or its stderr contains a structured signal, the hook calls `query()` and lands a hint for the agent's next turn. Fire-and-forget with a 500ms budget; never delays your tool response.
+- **`PostToolUse` (matcher=`Bash`) + `PostToolUseFailure` (all tools)** — when any tool call fails, or exit-0 Bash output contains a structured signal, the hook calls `query()` and lands a hint for the agent's next turn. Fire-and-forget with a 500ms budget; never delays your tool response.
 - **`Stop`** — at end of session, nudges `/stolperstein:reflect` if the session had ≥ `STOLPERSTEIN_REFLECT_THRESHOLD` tool-call turns (default 20) AND at least one non-zero bash exit OR one `flag`/`confirm` call. Trivial sessions produce no nudge.
   - **Opt-in: `STOLPERSTEIN_REFLECT_VIA_HOOK=true`** — when set, the Stop hook skips the nudge and instead POSTs a locally-derived session summary directly to `POST /hook/reflect` on the origin server. This bypasses both the MCP Portal and Anthropic's connector relay, avoiding WAF false positives on reflect-sized payloads. Fire-and-forget; failures mark the session as unreachable and stay silent. Requires the server running Phase 2 of `mcp-hook-rest-and-waf-extension` (stolperstein ≥ 0.2.0) and the same `MCP_STOLPERSTEIN_PUBLIC_URL` + `MCP_STOLPERSTEIN_API_KEY` vars the other hooks already use.
 
@@ -99,7 +101,7 @@ Three hooks ship with the plugin:
 
 ## Disabling hooks
 
-- **Temporarily, one hook:** `STOLPERSTEIN_HOOKS_DISABLED=UserPromptSubmit` (comma-separated list supports multiple).
+- **Temporarily, one hook:** `STOLPERSTEIN_HOOKS_DISABLED=UserPromptSubmit` (comma-separated; valid names: SessionStart, UserPromptSubmit, PostToolUse, Stop).
 - **Adjust thresholds:** `STOLPERSTEIN_HOOK_COOLDOWN_S=30`, `STOLPERSTEIN_REFLECT_THRESHOLD=20`.
 - **Route reflect through hook channel:** `STOLPERSTEIN_REFLECT_VIA_HOOK=true` (documented above under `Stop`).
 - **Project-specific error patterns:** `STOLPERSTEIN_ERROR_PATTERNS` (JSON array of regex strings) in `.claude/settings.json` replaces the default signal set.

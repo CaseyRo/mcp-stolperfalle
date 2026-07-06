@@ -579,6 +579,27 @@ class TestEntryScriptsIntegration:
         assert signal is not None
         assert "plain failure text" in signal
 
+    def test_extract_signal_non_bash_failure_fires(self):
+        """PostToolUseFailure matches all tools — any failure is signal."""
+        mod = _import("on_bash")
+        event = {
+            "tool_name": "mcp__linear__save_issue",
+            "hook_event_name": "PostToolUseFailure",
+            "error": "No approval received.",
+            "is_interrupt": False,
+        }
+        signal = mod._extract_signal(event)
+        assert signal == "No approval received."
+
+    def test_extract_signal_non_bash_success_is_skipped(self):
+        """Non-Bash success events (no error field) stay out of scope."""
+        mod = _import("on_bash")
+        event = {
+            "tool_name": "Read",
+            "tool_response": {"output": "Error: this is file CONTENT, not a failure"},
+        }
+        assert mod._extract_signal(event) is None
+
     def test_extract_signal_interrupt_is_skipped(self):
         """User-interrupted commands are not knowledge moments."""
         mod = _import("on_bash")
@@ -615,6 +636,25 @@ class TestEntryScriptsIntegration:
         captured = capsys.readouterr()
         assert captured.err == ""
         assert captured.out == ""
+
+
+class TestSessionStartNudge:
+    """SessionStart injects the static pull-discipline nudge."""
+
+    def test_emits_additional_context(self, capsys):
+        mod = _import("on_session_start")
+        assert mod.main() == 0
+        out = json.loads(capsys.readouterr().out)
+        hso = out["hookSpecificOutput"]
+        assert hso["hookEventName"] == "SessionStart"
+        assert "query" in hso["additionalContext"]
+        assert "confirm" in hso["additionalContext"]
+
+    def test_disabled_via_env_is_silent(self, monkeypatch, capsys):
+        monkeypatch.setenv("STOLPERSTEIN_HOOKS_DISABLED", "SessionStart")
+        mod = _import("on_session_start")
+        assert mod.main() == 0
+        assert capsys.readouterr().out == ""
 
 
 class TestOnStopReflectViaHook:

@@ -1,14 +1,19 @@
 """Claude Code hook handlers for Stolperstein.
 
-Three hooks are registered (see `../hooks.json`):
+Four hooks are registered (see `../hooks.json`):
+
+- `on_session_start.py` — SessionStart — injects a static one-line pull
+  discipline (query before non-trivial work; confirm/flag afterwards) so
+  every session knows the KB exists.
 
 - `on_prompt.py` — UserPromptSubmit — queries the KB when a user prompt
   contains a structured error signal (exception class name, non-zero exit
   code mention, traceback marker, HTTP status string, or explicit error
   prefix). Injects a temporally-qualified, sanitized hint on ≥0.5 confidence.
 
-- `on_bash.py` — PostToolUse (matcher=Bash) — queries the KB when a Bash
-  tool call exits non-zero or stderr contains a structured error signal.
+- `on_bash.py` — PostToolUse (matcher=Bash) + PostToolUseFailure (all
+  tools) — queries the KB when any tool call fails, or Bash output
+  contains a structured error signal.
   Fire-and-forget: 500ms budget; the hook returns immediately and the hint
   lands in the agent's next turn.
 

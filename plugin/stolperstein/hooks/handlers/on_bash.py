@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
-"""PostToolUse + PostToolUseFailure hook (matcher=Bash) — queries the KB
-when a Bash tool call fails or its output contains a structured error
-signal. Injects a sanitized, temporally-qualified hint for the agent's
-next turn.
+"""PostToolUse (matcher=Bash) + PostToolUseFailure (all tools) hook —
+queries the KB when a tool call fails or Bash output contains a
+structured error signal. Injects a sanitized, temporally-qualified hint
+for the agent's next turn.
 
 Registered for BOTH events because PostToolUse only fires on tool
 SUCCESS (exit 0) — nonzero-exit Bash calls, the exact moment this hook
 exists for, are delivered exclusively via PostToolUseFailure
 (anthropics/claude-code#6371). The success registration still matters:
 exit-0 commands whose output contains error text (grep over logs, test
-runners that swallow exit codes) are real signal too.
+runners that swallow exit codes) are real signal too. The failure
+registration matches ALL tools, not just Bash — any tool failure (Edit,
+WebFetch, MCP calls) is a knowledge moment.
 
 Fire-and-forget within the client query budget. Never blocks the tool
 response.
@@ -64,19 +66,22 @@ def _extract_signal(event: dict) -> str | None:
     """Given a Bash PostToolUse/PostToolUseFailure event payload, decide
     whether to fire and return the text to query with (or None for no-op).
     """
-    if event.get("tool_name") != "Bash":
-        return None
     if event.get("is_interrupt"):
         # User cancellation, not an error worth recalling knowledge for.
         return None
-
-    texts = _texts_from(event.get("tool_response") or {})
 
     # PostToolUseFailure events carry NO tool_response at all — the failure
     # text lives in a top-level `error` string ("Exit code N\n<stderr>").
     # Observed live 2026-06-11; do not trust docs claiming otherwise.
     err = event.get("error")
     failed = isinstance(err, str) and bool(err.strip())
+
+    # Successes arrive only for Bash (hooks.json matcher) and are scanned
+    # for error text; failures arrive for every tool and always count.
+    if event.get("tool_name") != "Bash" and not failed:
+        return None
+
+    texts = _texts_from(event.get("tool_response") or {})
     if failed:
         texts.append(err.strip())
 
@@ -122,7 +127,7 @@ async def _run() -> int:
         signal_text,
         hook_event=hook_event,
         rate_bucket=_HOOK_NAME,
-        source="Bash error",
+        source=f"{event.get('tool_name') or 'tool'} error",
         sid=session_id(event),
     )
 
