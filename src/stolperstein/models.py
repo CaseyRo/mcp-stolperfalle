@@ -20,7 +20,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any
+from typing import Annotated, Any
 
 from pydantic import BaseModel, Field, model_serializer
 
@@ -207,15 +207,23 @@ class KUCreate(BaseModel):
     signature — store assembles the nested Context/Evidence/Provenance.
     """
 
+    # Caps at the WRITE boundary only (not on Insight/KnowledgeUnit, which
+    # deserialize existing DB rows) — an unbounded detail/action/domains was a
+    # persistent storage + query-serialization DoS. Ceilings are generous;
+    # real KUs are a few KB.
     summary: str = Field(max_length=280)
-    detail: str
-    action: str
-    domains: list[str] = Field(min_length=1)
+    detail: str = Field(max_length=100_000)
+    action: str = Field(max_length=10_000)
+    domains: list[Annotated[str, Field(max_length=128)]] = Field(min_length=1, max_length=50)
     kind: KUKind
-    context_languages: list[str] = Field(default_factory=list)
-    context_frameworks: list[str] = Field(default_factory=list)
-    context_environment: str | None = None
-    context_pattern: str | None = None
+    context_languages: list[Annotated[str, Field(max_length=128)]] = Field(
+        default_factory=list, max_length=50
+    )
+    context_frameworks: list[Annotated[str, Field(max_length=128)]] = Field(
+        default_factory=list, max_length=50
+    )
+    context_environment: str | None = Field(default=None, max_length=256)
+    context_pattern: str | None = Field(default=None, max_length=256)
     severity: KUSeverity = KUSeverity.medium
     staleness_policy: str = "confirm_or_decay_after_90d"
 

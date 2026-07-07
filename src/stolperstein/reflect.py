@@ -9,8 +9,12 @@ from __future__ import annotations
 import json
 import logging
 import re
+from typing import TYPE_CHECKING
 
 from stolperstein.models import KUKind, KUSeverity, ReflectCandidate
+
+if TYPE_CHECKING:
+    from stolperstein.store import KnowledgeStore
 
 logger = logging.getLogger(__name__)
 
@@ -249,7 +253,7 @@ def _classify_kind(text: str) -> KUKind:
                 scores[kind] += 1
     if not scores:
         return KUKind.pitfall
-    best = max(scores, key=scores.get)
+    best = max(scores, key=lambda k: scores[k])
     return best if scores[best] > 0 else KUKind.pitfall
 
 
@@ -332,7 +336,7 @@ def _heuristic_extract(session_summary: str) -> list[ReflectCandidate]:
 
 async def reflect_with_dedup(
     session_summary: str,
-    store: object | None = None,
+    store: KnowledgeStore | None = None,
 ) -> dict:
     """Extract candidates via LLM (preferred) or heuristics (fallback).
 

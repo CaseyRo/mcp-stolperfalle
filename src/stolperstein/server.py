@@ -144,12 +144,10 @@ async def health(_request):
         from stolperstein import migrations as m
         from stolperstein.store import store
         db = store._get_db()
-        version = m.current_version(db)
-        return JSONResponse({
-            "status": "ok",
-            "schema_version": version,
-            "transport": settings.transport,
-        })
+        m.current_version(db)  # exercise the DB read + migration check
+        # Liveness only — no internal state (schema_version/transport) in the
+        # unauthenticated body; those stay behind status(debug=True).
+        return JSONResponse({"status": "ok"})
     except Exception as e:
         return JSONResponse(
             {"status": "degraded", "error": type(e).__name__},
@@ -216,9 +214,21 @@ async def hook_query(request):
     text = payload.get("text", "")
     if not text:
         return JSONResponse({"error": "text required"}, status_code=400)
-    limit = int(payload.get("limit", 1))
-    confidence_min = float(payload.get("confidence_min", 0.5))
+    # Untrusted JSON — a non-numeric limit or non-list domain used to raise an
+    # uncaught ValueError/TypeError that Starlette surfaced as an opaque 500.
+    try:
+        limit = int(payload.get("limit", 1))
+        confidence_min = float(payload.get("confidence_min", 0.5))
+    except (TypeError, ValueError):
+        return JSONResponse(
+            {"error": "limit must be an integer and confidence_min a number"},
+            status_code=400,
+        )
     domain = payload.get("domain")
+    if domain is not None and not isinstance(domain, list):
+        return JSONResponse(
+            {"error": "domain must be a list of strings"}, status_code=400
+        )
 
     from stolperstein.store import store
     result = await store.query(

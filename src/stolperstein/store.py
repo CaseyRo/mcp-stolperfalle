@@ -15,7 +15,7 @@ import struct
 from datetime import datetime, timezone
 from statistics import median
 
-import sqlite_vec
+import sqlite_vec  # type: ignore[import-untyped]  # no stubs / py.typed marker
 from fastmcp.exceptions import ToolError
 
 from stolperstein import migrations
@@ -409,6 +409,16 @@ class KnowledgeStore:
     ) -> dict:
         """Hybrid search: FTS5 + vec cosine, severity tiebreaker, TRUSTED_ORGS visibility."""
         db = self._get_db()
+        # Clamp paging here (not just on the tool signature) so BOTH the MCP tool
+        # and the /hook/query REST path are covered. A negative limit made
+        # `limit*2` negative → SQLite treats a negative LIMIT as unbounded and
+        # dumped the whole visible store; a huge limit forced an oversized KNN.
+        limit = max(1, min(int(limit), 100))
+        confidence_min = min(max(float(confidence_min), 0.0), 1.0)
+        if len(text) > 16_000:
+            raise ToolError(
+                "query text too long (max 16000 chars) — summarize your query"
+            )
         vis_sql, vis_params = self._visibility_filter_sql()
         vis_where = f" AND {vis_sql}" if vis_sql else ""
 
@@ -642,6 +652,14 @@ class KnowledgeStore:
                 [new_status.value, ku_id],
             )
         elif reason == "duplicate":
+            # duplicate ARCHIVES the KU and must name the replacement — same
+            # contract as 'superseded' (and as the vocabulary resource /
+            # docstring promise). Without this guard, flag(reason='duplicate')
+            # archived a KU with superseded_by=NULL, a dangling destructive op.
+            if not superseded_by:
+                raise ToolError(
+                    "flag(reason='duplicate') requires superseded_by=<ku_id>"
+                )
             new_status = KUStatus.archived
             db.execute(
                 "UPDATE knowledge_units SET status = ?, superseded_by = ? WHERE id = ?",
