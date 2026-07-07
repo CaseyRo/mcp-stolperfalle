@@ -1,0 +1,16 @@
+{
+  "last_compiled": "2026-07-07",
+  "topics": [
+    "project-overview",
+    "cq-interop-and-schema",
+    "knowledge-lifecycle",
+    "org-layer-foundations",
+    "claude-code-integration"
+  ],
+  "concepts": [
+    "conform-plus-extend",
+    "provenance-and-did-identity"
+  ],
+  "source_locations": ["openspec/", "docs/", "README.md", "CLAUDE.md", "USING.md"],
+  "total_sources_scanned": 32
+}
