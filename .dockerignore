@@ -1,0 +1,31 @@
+# Keep the build context small and prevent a future `COPY . .` from leaking
+# local secrets/state into image layers. The Dockerfile only COPYs
+# pyproject.toml, uv.lock, README.md and src/ — everything else is cruft.
+.git
+.gitignore
+.venv
+__pycache__/
+*.pyc
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.hypothesis/
+
+# Local state / secrets that must never reach a layer
+*.db
+*.db-wal
+*.db-shm
+*.bak-pre-v*
+*.key
+.env
+.env.*
+!.env.example
+
+# Not needed to build the wheel
+tests/
+openspec/
+docs/
+plugin/
+.github/
+.claude/
+.DS_Store

@@ -1,6 +1,10 @@
 name: Security Audit
 
 on:
+  pull_request:
+    paths:
+      - 'pyproject.toml'
+      - 'uv.lock'
   push:
     branches: [main]
     paths:
@@ -10,20 +14,24 @@ on:
     - cron: '0 6 * * 1'  # Weekly Monday 6am UTC
   workflow_dispatch: {}
 
+permissions:
+  contents: read
+
 jobs:
   security:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-
-      - uses: actions/setup-python@v6
-        with:
-          python-version: '3.12'
-
       - uses: astral-sh/setup-uv@v5
 
-      - name: Install
-        run: uv sync
+      # Audit the LOCKED project dependencies, not pip-audit's own ephemeral
+      # venv (the bare `uvx pip-audit` bug: it saw requests/rich, never
+      # fastmcp/torch). torch's local +cpu tag isn't on PyPI, so strip it —
+      # 2.12.1+cpu and 2.12.1 share advisories.
+      - name: Export locked requirements
+        run: |
+          uv export --format requirements-txt --no-emit-project -o requirements.txt
+          sed -i 's/+cpu//' requirements.txt
 
       - name: Security audit (pip-audit)
-        run: uvx pip-audit
+        run: uvx pip-audit==2.9.0 --no-deps --disable-pip -r requirements.txt

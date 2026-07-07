@@ -52,8 +52,13 @@ EXPOSE 8716
 # Unauthenticated /health returns 200 when the server is up and migrations
 # have finished. No bearer token needed → healthcheck logs don't flood
 # with 401s.
+# Probe with the PUBLIC Host header, not localhost — so the healthcheck fails
+# exactly when external traffic would (the fastmcp 3.4.3 host-guard 421 blind
+# spot: localhost stayed 200 while the public hostname was rejected).
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
   CMD python3 -c "import urllib.request,sys; \
-urllib.request.urlopen('http://localhost:8716/health', timeout=3); sys.exit(0)"
+req=urllib.request.Request('http://localhost:8716/health', \
+headers={'Host':'mcp-stolperstein.cdit-dev.de'}); \
+urllib.request.urlopen(req, timeout=3); sys.exit(0)"
 
 CMD ["mcp-stolperstein"]

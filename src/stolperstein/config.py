@@ -70,8 +70,12 @@ class Settings(BaseSettings):
 
         key = generate_api_key()
         self.mcp_stolperstein_api_key = SecretStr(key)
+        # Never log the secret value — container stdout is captured by the
+        # json-file driver and Komodo's log pane (pentest secret-leak finding).
         logger.warning(
-            "Generated API key: %s (set MCP_STOLPERSTEIN_API_KEY to persist)", key
+            "MCP_STOLPERSTEIN_API_KEY was empty; generated an ephemeral key "
+            "(value not logged). Set MCP_STOLPERSTEIN_API_KEY to a stable value "
+            "so clients can authenticate and the key survives restarts."
         )
         return key
 

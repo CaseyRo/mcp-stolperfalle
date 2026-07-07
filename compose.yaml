@@ -2,6 +2,13 @@ services:
   mcp-stolperstein:
     build: .
     restart: unless-stopped
+    # Runtime hardening: non-root already (USER mcp in the image); block
+    # privilege escalation and drop all Linux caps (a non-root Python HTTP
+    # server on :8716 needs none).
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     ports:
       - "8716:8716"
     environment:

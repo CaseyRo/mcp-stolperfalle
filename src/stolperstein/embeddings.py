@@ -31,8 +31,16 @@ class LocalEmbeddings:
 
     async def embed(self, text: str) -> list[float] | None:
         try:
+            import asyncio
+
             model = self._get_model()
-            embedding = model.encode(text, normalize_embeddings=True)
+            # encode() is sync + CPU-bound; run it off the event loop so a
+            # single query can't pin the (single-core) VM for every other
+            # request. torch releases the GIL during the heavy math, so the
+            # thread actually yields.
+            embedding = await asyncio.to_thread(
+                model.encode, text, normalize_embeddings=True
+            )
             return embedding.tolist()
         except Exception:
             logger.warning("Local embedding failed", exc_info=True)
