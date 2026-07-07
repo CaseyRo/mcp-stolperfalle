@@ -111,14 +111,54 @@ def test_rich_output_fails_strict_schema_by_design():
         jsonschema.validate(rich, schema)
 
 
-def test_strict_omits_stolperstein_extensions():
-    """Extension fields are not on the wire."""
+def test_strict_extensions_only_inside_the_slot():
+    """Extension fields never appear as first-class properties — only under
+    `extensions` with `stolperstein:*` keys."""
     ku = _make_ku()
     data = ku.to_cq_json_strict()
     for field in (
         "kind", "status", "owner_org", "provenance", "staleness_policy", "related"
     ):
         assert field not in data, f"extension field '{field}' leaked into strict output"
-    # evidence.severity must not be there either
     assert "severity" not in data["evidence"]
     assert "environment" not in data.get("context", {})
+
+    ext = data["extensions"]
+    assert ext["stolperstein:severity"] == "high"
+    assert ext["stolperstein:kind"] == "pitfall"
+    assert ext["stolperstein:status"] == "active"
+    assert ext["stolperstein:owner_org"] == "did:key:zA"
+    assert ext["stolperstein:staleness_policy"] == "confirm_or_decay_after_90d"
+    assert ext["stolperstein:environment"] == "xcode-16"
+    assert ext["stolperstein:contributing_orgs"] == ["did:key:zA", "did:key:zB"]
+    assert ext["stolperstein:related"] == [{"type": "extends", "target_id": "ku_" + "b" * 32}]
+
+
+def test_strict_extension_keys_match_upstream_format():
+    """Every emitted extensions key satisfies the upstream key pattern."""
+    import re
+    key_re = re.compile(r"^[a-z0-9][a-z0-9_-]*:\S+$")
+    ext = _make_ku().to_cq_json_strict()["extensions"]
+    for key in ext:
+        assert key_re.match(key), f"extensions key '{key}' violates upstream format"
+    assert len(ext) <= 20  # upstream maxProperties
+
+
+def test_strict_empty_extension_values_produce_no_keys():
+    """Null/empty extension values are omitted; always-present fields remain."""
+    ku = _make_ku(
+        context=Context(languages=["swift"]),  # no environment
+        evidence=Evidence(severity=KUSeverity.medium),  # no contributing_orgs
+        related=[],
+        provenance=Provenance(proposer_did="did:key:zA"),  # emergent None
+    )
+    ext = ku.to_cq_json_strict()["extensions"]
+    for absent in (
+        "stolperstein:environment", "stolperstein:contributing_orgs",
+        "stolperstein:related", "stolperstein:emergent",
+    ):
+        assert absent not in ext
+    assert None not in ext.values()
+    # Always-valued fields still ride the slot.
+    assert ext["stolperstein:severity"] == "medium"
+    assert ext["stolperstein:kind"] == "pitfall"

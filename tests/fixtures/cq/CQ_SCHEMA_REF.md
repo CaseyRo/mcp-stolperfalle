@@ -4,9 +4,9 @@ The `knowledge_unit.json` file in this directory is a vendored copy of Mozilla A
 
 - **Upstream repo:** https://github.com/mozilla-ai/cq
 - **Path in repo:** `schema/knowledge_unit.json`
-- **Pinned commit:** `92b35de20ffc6500a5a50be16750530ca160a816`
-- **Pinned at:** 2026-04-17
-- **Upstream raw URL at this pin:** https://raw.githubusercontent.com/mozilla-ai/cq/92b35de20ffc6500a5a50be16750530ca160a816/schema/knowledge_unit.json
+- **Pinned commit:** `cb1f81fc87c7728f7337313a531d299a686388aa`
+- **Pinned at:** 2026-07-07 (first pin containing the `extensions` slot from [mozilla-ai/cq#453](https://github.com/mozilla-ai/cq/pull/453))
+- **Upstream raw URL at this pin:** https://raw.githubusercontent.com/mozilla-ai/cq/cb1f81fc87c7728f7337313a531d299a686388aa/schema/knowledge_unit.json
 - **Upstream discussion of extensions we propose:** https://github.com/mozilla-ai/cq/discussions/286
 
 ## How to update

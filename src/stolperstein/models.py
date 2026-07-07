@@ -4,11 +4,13 @@ Stolperstein carries a richer model than upstream `mozilla-ai/cq` currently
 defines. The internal model is the superset. Serialization to the wire goes
 through one of two explicit functions:
 
-- `to_cq_json_strict()` emits only fields present in upstream's schema
-  (see `tests/fixtures/cq/knowledge_unit.json`). Passes strict validation.
-- `to_cq_json_rich()` emits the full superset including Stolperstein
-  extensions. Intended for local consumers, debugging, and any downstream
-  aware of our extensions.
+- `to_cq_json_strict()` emits the upstream-valid wire shape
+  (see `tests/fixtures/cq/knowledge_unit.json`). Stolperstein extension
+  fields ride the upstream `extensions` slot as `stolperstein:*` keys
+  (mozilla-ai/cq#453) instead of appearing as first-class fields.
+- `to_cq_json_rich()` emits the full superset with extensions as
+  first-class fields. Intended for local consumers, debugging, and any
+  downstream aware of our internal shape.
 
 See `docs/cq-extensions.md` for the registry of every field that exists in
 `rich` but not in `strict`.
@@ -125,7 +127,13 @@ class KnowledgeUnit(BaseModel):
     # --- serializers ---
 
     def to_cq_json_strict(self) -> dict[str, Any]:
-        """Emit the upstream-valid wire shape. Extensions stripped."""
+        """Emit the upstream-valid wire shape.
+
+        Stolperstein extension fields are carried inside the optional
+        `extensions` object under `stolperstein:*` keys (upstream key
+        format `^[a-z0-9][a-z0-9_-]*:\\S+$`, max 20 properties); empty and
+        null extension values produce no key.
+        """
         out: dict[str, Any] = {
             "id": self.id,
             "version": 1,
@@ -160,6 +168,24 @@ class KnowledgeUnit(BaseModel):
 
         if self.superseded_by is not None:
             out["superseded_by"] = self.superseded_by
+
+        ext: dict[str, Any] = {
+            "stolperstein:severity": self.evidence.severity.value,
+            "stolperstein:kind": self.kind.value,
+            "stolperstein:status": self.status.value,
+            "stolperstein:staleness_policy": self.staleness_policy,
+            "stolperstein:owner_org": self.owner_org,
+        }
+        if self.evidence.contributing_orgs:
+            ext["stolperstein:contributing_orgs"] = list(self.evidence.contributing_orgs)
+        if self.context.environment is not None:
+            ext["stolperstein:environment"] = self.context.environment
+        if self.related:
+            ext["stolperstein:related"] = [r.model_dump() for r in self.related]
+        if self.provenance.emergent is not None:
+            ext["stolperstein:emergent"] = self.provenance.emergent
+        if ext:
+            out["extensions"] = ext
 
         return out
 

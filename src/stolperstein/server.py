@@ -558,14 +558,16 @@ def vocabulary_resource() -> dict:
     "cq://extensions",
     name="CQ extension registry",
     description="Registry of Stolperstein fields that extend the upstream "
-    "mozilla-ai/cq schema (carried in rich output, stripped in strict).",
+    "mozilla-ai/cq schema (first-class in rich output; carried as "
+    "stolperstein:* keys in the extensions slot in strict).",
     mime_type="text/markdown",
 )
 def cq_extensions_resource() -> str:
     """The `docs/cq-extensions.md` registry, or a built-in summary if absent.
 
-    Distinguishes upstream-conformant fields from Stolperstein extensions so a
-    consumer knows what survives `to_cq_json_strict()` onto the wire.
+    Distinguishes upstream core fields from Stolperstein extensions so a
+    consumer knows which `stolperstein:*` keys to expect in the
+    `extensions` slot of `to_cq_json_strict()` output.
     """
     doc = (
         Path(__file__).parent.parent.parent / "docs" / "cq-extensions.md"
@@ -575,14 +577,16 @@ def cq_extensions_resource() -> str:
     except OSError:
         return (
             "# Stolperstein CQ extensions\n\n"
-            "Extensions carried in rich output but stripped by "
-            "`to_cq_json_strict()` before any wire transmission:\n"
+            "Extension fields — first-class in rich output, emitted as "
+            "`stolperstein:*` keys in the `extensions` slot by "
+            "`to_cq_json_strict()`:\n"
             "- `evidence.severity`, `evidence.contributing_orgs`\n"
             "- `context.environment`\n"
             "- top-level `kind`, `status`, `staleness_policy`, `related[]`, "
             "`owner_org`\n"
-            "- `provenance.proposer_did` (emitted as upstream `created_by`), "
-            "`provenance.graduation_history`, `provenance.emergent`\n\n"
+            "- `provenance.emergent`\n"
+            "(`provenance.proposer_did` is emitted as upstream core "
+            "`created_by`.)\n\n"
             "See docs/cq-extensions.md in the repo for the canonical registry."
         )
 
