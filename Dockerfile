@@ -1,15 +1,20 @@
 FROM python:3.12-slim AS builder
 
 WORKDIR /app
-COPY pyproject.toml README.md ./
+COPY pyproject.toml uv.lock README.md ./
 COPY src/ ./src/
 
-# Pre-install CPU-only torch so sentence-transformers (pulled in by the
-# install below) resolves its torch dep from the CPU wheel index instead
-# of PyPI's default CUDA build. Saves ~5 GB of nvidia-cuda-* transitive
-# packages that nebula-1 (CPU-only Hetzner VM) can't use anyway.
-RUN pip install --no-cache-dir --extra-index-url https://download.pytorch.org/whl/cpu torch && \
-    pip install --no-cache-dir .
+# Install EXACTLY what uv.lock pins — never re-resolve at build time.
+# (Incident 2026-07-07: an unpinned `pip install .` here silently picked up
+# fastmcp 3.4.3, whose new Host-header guard 421'd all of production.)
+# uv.lock pins linux torch to the CPU wheel index via tool.uv.sources, so
+# the extra-index-url is required for pip to find the +cpu build; it saves
+# ~5 GB of nvidia-cuda-* packages nebula-1 (CPU-only VM) can't use.
+RUN pip install --no-cache-dir uv && \
+    uv export --frozen --no-dev --no-emit-project --no-hashes -o /tmp/requirements.txt && \
+    pip install --no-cache-dir --extra-index-url https://download.pytorch.org/whl/cpu \
+        -r /tmp/requirements.txt && \
+    pip install --no-cache-dir --no-deps .
 
 # Pre-download the embedding model at build time
 RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('all-MiniLM-L6-v2')"
