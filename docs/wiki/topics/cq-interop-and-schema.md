@@ -11,12 +11,12 @@ Stolperfalle's Knowledge Unit (KU) model is a **superset** of Mozilla AI's upstr
 
 Two serializers implement this split in `src/stolperfalle/models.py`:
 
-- **`to_cq_json_strict()`** — emits the upstream-valid wire shape. Stolperfalle extension fields are carried inside the upstream **`extensions` slot** under `stolperstein:*` keys (e.g. `evidence.severity` → `extensions["stolperstein:severity"]`). Validated on every commit against a vendored, pinned copy of the upstream schema in `tests/fixtures/cq/knowledge_unit.json`.
+- **`to_cq_json_strict()`** — emits the upstream-valid wire shape. Stolperfalle extension fields are carried inside the upstream **`extensions` slot** under `stolperfalle:*` keys (e.g. `evidence.severity` → `extensions["stolperfalle:severity"]`). Validated on every commit against a vendored, pinned copy of the upstream schema in `tests/fixtures/cq/knowledge_unit.json`.
 - **`to_cq_json_rich()`** — emits the full internal superset with every extension as a first-class field (`evidence.severity`, top-level `kind`, etc.), *no* `extensions` object. Used for local dumps, debugging, and extension-aware consumers.
 
 A third serializer, `to_cq_v0()`, emits the pre-alignment legacy shape for the Siyuan-sync transition, gated by `CQ_SIYUAN_SCHEMA_VERSION=0`.
 
-The canonical extension registry is `docs/cq-extensions.md`; every `stolperstein:*` key on the wire must appear there. Wire compatibility across schema changes is enforced by the versioned migration framework under `src/stolperfalle/migrations/`. Upstream engagement runs through discussion [#286](https://github.com/mozilla-ai/cq/discussions/286), scoping issue [#406](https://github.com/mozilla-ai/cq/issues/406), and the slot-merge PR [#453](https://github.com/mozilla-ai/cq/pull/453).
+The canonical extension registry is `docs/cq-extensions.md`; every `stolperfalle:*` key on the wire must appear there. Wire compatibility across schema changes is enforced by the versioned migration framework under `src/stolperfalle/migrations/`. Upstream engagement runs through discussion [#286](https://github.com/mozilla-ai/cq/discussions/286), scoping issue [#406](https://github.com/mozilla-ai/cq/issues/406), and the slot-merge PR [#453](https://github.com/mozilla-ai/cq/pull/453).
 
 ## Rationale & Context [coverage: high — 6 sources]
 
@@ -33,7 +33,7 @@ The canonical extension registry is `docs/cq-extensions.md`; every `stolperstein
 **Wire format SHALL conform to a pinned upstream schema.** All KUs emitted to any external CQ consumer SHALL conform exactly to `mozilla-ai/cq` `schema/knowledge_unit.json` as vendored at a pinned SHA in `tests/fixtures/cq/`. The pin SHALL be a post-#453 revision defining the optional top-level `extensions` object with keys matching `^[a-z0-9][a-z0-9_-]*:\S+$`.
 
 **Two serializers SHALL exist:**
-- `to_cq_json_strict()` — upstream-valid; extensions emitted in the `extensions` slot under `stolperstein:*` keys (no longer stripped).
+- `to_cq_json_strict()` — upstream-valid; extensions emitted in the `extensions` slot under `stolperfalle:*` keys (no longer stripped).
 - `to_cq_json_rich()` — internal superset with extensions as first-class fields; no `extensions` object.
 
 **Strict-mode core field mapping** (unchanged by the slot adoption):
@@ -44,17 +44,17 @@ The canonical extension registry is `docs/cq-extensions.md`; every `stolperstein
 - `provenance.proposer_did` → upstream `created_by`
 
 **Strict-mode extension mapping** (all under the top-level `extensions` object):
-- `evidence.severity` → `stolperstein:severity` (string; always present)
-- `evidence.contributing_orgs` → `stolperstein:contributing_orgs` (array; omitted when empty)
-- `context.environment` → `stolperstein:environment` (string; omitted when null)
-- top-level `kind` → `stolperstein:kind` (string; always present)
-- top-level `status` → `stolperstein:status` (string; always present)
-- top-level `staleness_policy` → `stolperstein:staleness_policy` (string; always present)
-- top-level `related[]` → `stolperstein:related` (array of `{type, target_id}`; omitted when empty)
-- top-level `owner_org` → `stolperstein:owner_org` (string, DID; always present)
-- `provenance.emergent` → `stolperstein:emergent` (boolean; omitted when null)
+- `evidence.severity` → `stolperfalle:severity` (string; always present)
+- `evidence.contributing_orgs` → `stolperfalle:contributing_orgs` (array; omitted when empty)
+- `context.environment` → `stolperfalle:environment` (string; omitted when null)
+- top-level `kind` → `stolperfalle:kind` (string; always present)
+- top-level `status` → `stolperfalle:status` (string; always present)
+- top-level `staleness_policy` → `stolperfalle:staleness_policy` (string; always present)
+- top-level `related[]` → `stolperfalle:related` (array of `{type, target_id}`; omitted when empty)
+- top-level `owner_org` → `stolperfalle:owner_org` (string, DID; always present)
+- `provenance.emergent` → `stolperfalle:emergent` (boolean; omitted when null)
 
-**Extension key format and emptiness rules.** Every emitted key SHALL match `^[a-z0-9][a-z0-9_-]*:\S+$`; the wire key per field is `stolperstein:<field>`. Null/empty values emit no key. The entire `extensions` object SHALL be omitted when no extension value is present (a hypothetical zero-extension KU). In practice `severity`, `kind`, `status`, `staleness_policy`, and `owner_org` always have values, so a real KU always produces at least those five keys. Internal-only fields (`last_queried_at`, `graduated_to_team`) SHALL remain absent from strict output entirely.
+**Extension key format and emptiness rules.** Every emitted key SHALL match `^[a-z0-9][a-z0-9_-]*:\S+$`; the wire key per field is `stolperfalle:<field>`. Null/empty values emit no key. The entire `extensions` object SHALL be omitted when no extension value is present (a hypothetical zero-extension KU). In practice `severity`, `kind`, `status`, `staleness_policy`, and `owner_org` always have values, so a real KU always produces at least those five keys. Internal-only fields (`last_queried_at`, `graduated_to_team`) SHALL remain absent from strict output entirely.
 
 **Guaranteed absences.** No extension field name (`severity`, `kind`, `status`, `owner_org`, `staleness_policy`, `related`, `environment`, `contributing_orgs`, `emergent`) SHALL appear at top level or inside `context`/`evidence`/`provenance` sub-objects — only inside `extensions`. This is asserted in `tests/test_cq_schema.py` on every commit.
 
@@ -72,7 +72,7 @@ The canonical extension registry is `docs/cq-extensions.md`; every `stolperstein
 
 **Extensions-slot design decisions** (from the adopt-cq-extensions-slot design doc):
 1. **Namespace `stolperfalle`** — not `st` or `cdit`; readable, unambiguous, matches the repo/plugin name, and satisfies the key-format constraint.
-2. **Flat keys, JSON-native values** — `stolperstein:severity` → `"high"`, `stolperstein:related` → array of `{type, target_id}` dicts. A single `stolperstein:meta` blob was rejected: per-field keys let a consumer pick fields without parsing a nested contract, and mirror how the registry documents each field.
+2. **Flat keys, JSON-native values** — `stolperfalle:severity` → `"high"`, `stolperfalle:related` → array of `{type, target_id}` dicts. A single `stolperfalle:meta` blob was rejected: per-field keys let a consumer pick fields without parsing a nested contract, and mirror how the registry documents each field.
 3. **Omit-when-empty** — null/empty values produce no key; a zero-extension KU omits the object. Keeps payloads minimal and makes "no extensions" indistinguishable from a pre-slot producer.
 4. **Re-vendor as a straight copy of upstream `main`** (post-#453 SHA recorded in `tests/fixtures/cq/CQ_SCHEMA_REF.md`), never a hand-edit — the fixture is the oracle; hand-edits drift.
 5. **Registry framing** — rows keep their #286 verdicts (which govern *core* promotion) and gain a note that each field now rides the slot on the wire; the old "extensions must never leak through strict" rule was rewritten to "extensions must only appear inside the `extensions` slot."
@@ -93,26 +93,26 @@ Operator entrypoints: `mcp-stolperfalle migrate` (runs the runner, prints `from 
 
 **The `extensions` slot (#453).** An optional top-level object on `KnowledgeUnit`; keys must match `^[a-z0-9][a-z0-9_-]*:\S+$`; **max 20 properties**; values carry **no protocol semantics** and are validated in the Go/Python SDKs and CLI. It was deliberately scoped *outside* any signing envelope. Stolperfalle uses 9 keys for its single implementation.
 
-**The extension registry** (`docs/cq-extensions.md`) — every `stolperstein:*` key with its upstream verdict:
+**The extension registry** (`docs/cq-extensions.md`) — every `stolperfalle:*` key with its upstream verdict:
 
 | Field (internal) | Wire key | Type | Upstream verdict | Purpose |
 |---|---|---|---|---|
-| `evidence.severity` | `stolperstein:severity` | `low\|medium\|high\|critical` | **declined** | Ranking tiebreaker + decay-floor modifier. Upstream: self-assigned trust is cheap to game; importance should emerge from usage. |
-| `evidence.contributing_orgs` | `stolperstein:contributing_orgs` | `array[string]` (DIDs) | **declined** | Diversity-weighted confidence. Upstream: per-KU org arrays are a profile-building vector when joined; compute diversity from confirmation provenance instead. |
-| `context.environment` | `stolperstein:environment` | string | **deferred** | Build/runtime scope (`macos`, `cloudflare-workers`, `node-22`). Upstream: fold into `frameworks`; revisit via [#170](https://github.com/mozilla-ai/cq/issues/170) if still noisy. |
-| `kind` | `stolperstein:kind` | `pitfall\|workaround\|tool-recommendation` | **declined** | Coarse KU typing. Upstream: derive classification from observed usage, not contributor declaration. |
-| `status` | `stolperstein:status` | `draft\|active\|stale\|disputed\|archived` | **stolperfalle-specific** | Lifecycle state machine (upstream models lifecycle only via `flags[]`). |
-| `staleness_policy` | `stolperstein:staleness_policy` | string | **stolperfalle-specific** | Per-KU decay-policy override. |
-| `related[]` | `stolperstein:related` | `[{type, target_id}]` | **stolperfalle-specific** | Relationship graph beyond `superseded_by`. |
-| `owner_org` | `stolperstein:owner_org` | string (DID) | **stolperfalle-specific** | Multi-tenant read filter via `TRUSTED_ORGS` (Phase 1 foundation). Upstream has `tier: local\|private\|public` for a different slice. |
+| `evidence.severity` | `stolperfalle:severity` | `low\|medium\|high\|critical` | **declined** | Ranking tiebreaker + decay-floor modifier. Upstream: self-assigned trust is cheap to game; importance should emerge from usage. |
+| `evidence.contributing_orgs` | `stolperfalle:contributing_orgs` | `array[string]` (DIDs) | **declined** | Diversity-weighted confidence. Upstream: per-KU org arrays are a profile-building vector when joined; compute diversity from confirmation provenance instead. |
+| `context.environment` | `stolperfalle:environment` | string | **deferred** | Build/runtime scope (`macos`, `cloudflare-workers`, `node-22`). Upstream: fold into `frameworks`; revisit via [#170](https://github.com/mozilla-ai/cq/issues/170) if still noisy. |
+| `kind` | `stolperfalle:kind` | `pitfall\|workaround\|tool-recommendation` | **declined** | Coarse KU typing. Upstream: derive classification from observed usage, not contributor declaration. |
+| `status` | `stolperfalle:status` | `draft\|active\|stale\|disputed\|archived` | **stolperfalle-specific** | Lifecycle state machine (upstream models lifecycle only via `flags[]`). |
+| `staleness_policy` | `stolperfalle:staleness_policy` | string | **stolperfalle-specific** | Per-KU decay-policy override. |
+| `related[]` | `stolperfalle:related` | `[{type, target_id}]` | **stolperfalle-specific** | Relationship graph beyond `superseded_by`. |
+| `owner_org` | `stolperfalle:owner_org` | string (DID) | **stolperfalle-specific** | Multi-tenant read filter via `TRUSTED_ORGS` (Phase 1 foundation). Upstream has `tier: local\|private\|public` for a different slice. |
 | `provenance.proposer_did` | (→ core `created_by`) | string (DID) | **deferred** | Strict mode emits it as upstream `created_by`; cross-install attribution portability invited as its own thread. |
-| `provenance.emergent` | `stolperstein:emergent` | boolean | **stolperfalle-specific** | Distinguishes emergent-aggregation `tool-gap-signal` KUs from grandfathered migration artifacts. |
+| `provenance.emergent` | `stolperfalle:emergent` | boolean | **stolperfalle-specific** | Distinguishes emergent-aggregation `tool-gap-signal` KUs from grandfathered migration artifacts. |
 
 **Removed from the live model.** `provenance.graduation_history` (`array[{timestamp, target, reviewer_did, agent}]`, upstream verdict **declined** — governance belongs in admin tooling) was removed in the 2026-07 cleanup because nothing wrote it (graduation is Phase-2). The `graduation_history` DB column from the provenance migration remains; the field returns with Phase-2 graduation.
 
 **Wire-format rules** (registry, rule set):
 1. Adding an extension requires adding its registry row in the same change.
-2. When upstream promotes an extension into core, move the row to the (not-yet-created) "accepted" table and emit it as a core field instead of a `stolperstein:*` key.
+2. When upstream promotes an extension into core, move the row to the (not-yet-created) "accepted" table and emit it as a core field instead of a `stolperfalle:*` key.
 3. Extensions appear in strict output **only** inside `extensions`, never as first-class properties — enforced by `tests/test_cq_schema.py`.
 
 ## Status & Open Questions [coverage: medium — 4 sources]
@@ -126,7 +126,7 @@ Operator entrypoints: `mcp-stolperfalle migrate` (runs the runner, prints `from 
 - **Stolperfalle-specific (never upstream):** `status`, `staleness_policy`, `related[]`, `owner_org`, `provenance.emergent`.
 - **Declined + removed from model:** `graduation_history` (EU AI Act audit-trail thread invited when concrete requirements exist).
 
-**Archive state.** The `adopt-cq-extensions-slot` change is **archived** (`openspec/changes/archive/2026-07-07-adopt-cq-extensions-slot/`) with all tasks checked off: re-vendored pin, serializer emission, inverted tests (extensions now asserted *present* under `stolperstein:*` and still schema-valid), key-regex assertion, docs/resource updates, and green `pytest`/`ruff`/`mypy`. Its requirement was synced into the live spec `openspec/specs/cq-interop/spec.md`.
+**Archive state.** The `adopt-cq-extensions-slot` change is **archived** (`openspec/changes/archive/2026-07-07-adopt-cq-extensions-slot/`) with all tasks checked off: re-vendored pin, serializer emission, inverted tests (extensions now asserted *present* under `stolperfalle:*` and still schema-valid), key-regex assertion, docs/resource updates, and green `pytest`/`ruff`/`mypy`. Its requirement was synced into the live spec `openspec/specs/cq-interop/spec.md`.
 
 **Pending / open questions:**
 - **`maxProperties: 20` headroom.** Comfortable at 9 keys for one implementation, but two or three implementations annotating the same unit (the working-group scenario) would approach the cap. Flagged upstream before it becomes load-bearing.

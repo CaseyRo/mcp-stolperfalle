@@ -1,12 +1,14 @@
 # Stolperfalle extensions to the CQ schema
 
-Stolperfalle conforms strictly to the upstream `mozilla-ai/cq` schema on the wire (see `tests/fixtures/cq/CQ_SCHEMA_REF.md` for the pin). It also carries **extensions** — fields we need for our use case that upstream doesn't define as core schema. Extensions are stored locally, exposed as first-class fields by `to_cq_json_rich()` and the MCP tool surface, and emitted by `to_cq_json_strict()` inside the upstream **`extensions` slot** under `stolperstein:*` keys.
+> **Namespace rename (2026-07-11):** these keys were emitted under `stolperstein:*` until the product rename ([why](../openspec/changes/archive/2026-07-11-rename-product-name/proposal.md)). The namespace is our own emitted value — cq's `extensions` slot is generic (`^[a-z0-9][a-z0-9_-]*:\S+$`) and never referenced `stolperstein`. All keys are now `stolperfalle:*`. A consumer that stored old-namespace payloads should map `stolperstein:<field>` → `stolperfalle:<field>`.
 
-This document is the canonical registry. Every `stolperstein:*` key emitted on the wire **must** appear here.
+Stolperfalle conforms strictly to the upstream `mozilla-ai/cq` schema on the wire (see `tests/fixtures/cq/CQ_SCHEMA_REF.md` for the pin). It also carries **extensions** — fields we need for our use case that upstream doesn't define as core schema. Extensions are stored locally, exposed as first-class fields by `to_cq_json_rich()` and the MCP tool surface, and emitted by `to_cq_json_strict()` inside the upstream **`extensions` slot** under `stolperfalle:*` keys.
+
+This document is the canonical registry. Every `stolperfalle:*` key emitted on the wire **must** appear here.
 
 Upstream discussion proposing these extensions: [mozilla-ai/cq#286](https://github.com/mozilla-ai/cq/discussions/286). Maintainer response received 2026-04-28 — verdicts reflected in the Status column below. Verdicts govern promotion into the **core** schema; slot carriage is orthogonal.
 
-The former `additionalProperties: false` blocker is resolved: our scoping issue [#406](https://github.com/mozilla-ai/cq/issues/406) led to the `extensions` slot merging upstream in [#453](https://github.com/mozilla-ai/cq/pull/453) (2026-06-23) — an optional top-level object, keys matching `^[a-z0-9][a-z0-9_-]*:\S+$`, max 20 properties, no protocol semantics. Wire key per field: `stolperstein:<field>` (e.g. `evidence.severity` → `stolperstein:severity`); null/empty values emit no key.
+The former `additionalProperties: false` blocker is resolved: our scoping issue [#406](https://github.com/mozilla-ai/cq/issues/406) led to the `extensions` slot merging upstream in [#453](https://github.com/mozilla-ai/cq/pull/453) (2026-06-23) — an optional top-level object, keys matching `^[a-z0-9][a-z0-9_-]*:\S+$`, max 20 properties, no protocol semantics. Wire key per field: `stolperfalle:<field>` (e.g. `evidence.severity` → `stolperfalle:severity`); null/empty values emit no key.
 
 ## Status legend
 
@@ -38,5 +40,5 @@ The former `additionalProperties: false` blocker is resolved: our scoping issue 
 ## Rules
 
 1. Adding a new extension requires adding a row here in the same change that adds the field.
-2. When upstream accepts an extension into the core schema, move the row to the "accepted" table (not yet created — first acceptance will create it) and emit it as a core field instead of a `stolperstein:*` key.
-3. Extensions appear in strict output **only** inside the `extensions` slot as `stolperstein:*` keys — never as first-class properties. `tests/test_cq_schema.py` validates this on every commit.
+2. When upstream accepts an extension into the core schema, move the row to the "accepted" table (not yet created — first acceptance will create it) and emit it as a core field instead of a `stolperfalle:*` key.
+3. Extensions appear in strict output **only** inside the `extensions` slot as `stolperfalle:*` keys — never as first-class properties. `tests/test_cq_schema.py` validates this on every commit.

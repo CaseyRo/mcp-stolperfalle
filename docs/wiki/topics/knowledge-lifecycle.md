@@ -7,7 +7,7 @@ last_compiled: 2026-07-07
 
 ## Summary [coverage: high — 6 sources]
 
-The Knowledge Unit (KU) lifecycle is the spine of mcp-stolperstein: how experiential knowledge is **captured** (`propose`, `reflect`), **retrieved** (`query`), and **matured or retired** through confirm/flag transitions and a confidence score that rises with corroboration and decays with time. Six MCP tools drive it — `query`, `propose`, `confirm`, `flag`, `reflect`, `status` — over a SQLite store combining an FTS5 keyword index and a sqlite-vec vector index for hybrid search.
+The Knowledge Unit (KU) lifecycle is the spine of mcp-stolperfalle: how experiential knowledge is **captured** (`propose`, `reflect`), **retrieved** (`query`), and **matured or retired** through confirm/flag transitions and a confidence score that rises with corroboration and decays with time. Six MCP tools drive it — `query`, `propose`, `confirm`, `flag`, `reflect`, `status` — over a SQLite store combining an FTS5 keyword index and a sqlite-vec vector index for hybrid search.
 
 Every KU carries a `status` (`draft` → `active` → `stale` → `archived`, plus `disputed` off any live state) and a `confidence` float in [0.0, 1.0] that starts at 0.5, moves up with organizationally-diverse confirmations, decays linearly past a staleness threshold, and is capped at 0.5 when disputed. Duplicate proposals (>0.9 cosine to an existing active KU) collapse into a `duplicate_of` reference rather than creating a new entry.
 
