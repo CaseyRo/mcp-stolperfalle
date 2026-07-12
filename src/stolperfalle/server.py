@@ -569,14 +569,14 @@ def vocabulary_resource() -> dict:
     name="CQ extension registry",
     description="Registry of Stolperfalle fields that extend the upstream "
     "mozilla-ai/cq schema (first-class in rich output; carried as "
-    "stolperstein:* keys in the extensions slot in strict).",
+    "stolperfalle:* keys in the extensions slot in strict).",
     mime_type="text/markdown",
 )
 def cq_extensions_resource() -> str:
     """The `docs/cq-extensions.md` registry, or a built-in summary if absent.
 
     Distinguishes upstream core fields from Stolperfalle extensions so a
-    consumer knows which `stolperstein:*` keys to expect in the
+    consumer knows which `stolperfalle:*` keys to expect in the
     `extensions` slot of `to_cq_json_strict()` output.
     """
     doc = (
@@ -588,7 +588,7 @@ def cq_extensions_resource() -> str:
         return (
             "# Stolperfalle CQ extensions\n\n"
             "Extension fields — first-class in rich output, emitted as "
-            "`stolperstein:*` keys in the `extensions` slot by "
+            "`stolperfalle:*` keys in the `extensions` slot by "
             "`to_cq_json_strict()`:\n"
             "- `evidence.severity`, `evidence.contributing_orgs`\n"
             "- `context.environment`\n"

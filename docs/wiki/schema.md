@@ -12,7 +12,7 @@ your changes. Topic/concept slugs are `lowercase-kebab-case`; link style is `obs
 ## Topics
 
 - **project-overview** — strategic + operational overview: the "machine-readable org layer" thesis (CDiT Phase 1), the two change proposals + designs, and the day-to-day runbook.
-- **cq-interop-and-schema** — CQ conformance, the strict/rich serializers, the `stolperstein:*` extension registry, the upstream discussion (#286/#406/#453), and schema migrations.
+- **cq-interop-and-schema** — CQ conformance, the strict/rich serializers, the `stolperfalle:*` extension registry, the upstream discussion (#286/#406/#453), and schema migrations.
 - **knowledge-lifecycle** — the KU lifecycle: capture (propose/reflect), retrieval (hybrid FTS5 + vector), transitions (confirm/flag/decay), states, and confidence scoring.
 - **org-layer-foundations** — `owner_org` + `TRUSTED_ORGS` visibility (Phase 1: read-filter, trust-all) and emergent-signal detection from query misses.
 - **claude-code-integration** — the Claude Code plugin (SKILL + hooks), the three hook handlers, the reflect flow, and optional SiYuan sync.

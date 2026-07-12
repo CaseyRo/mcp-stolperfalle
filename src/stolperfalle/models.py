@@ -6,7 +6,7 @@ through one of two explicit functions:
 
 - `to_cq_json_strict()` emits the upstream-valid wire shape
   (see `tests/fixtures/cq/knowledge_unit.json`). Stolperfalle extension
-  fields ride the upstream `extensions` slot as `stolperstein:*` keys
+  fields ride the upstream `extensions` slot as `stolperfalle:*` keys
   (mozilla-ai/cq#453) instead of appearing as first-class fields.
 - `to_cq_json_rich()` emits the full superset with extensions as
   first-class fields. Intended for local consumers, debugging, and any
@@ -130,7 +130,7 @@ class KnowledgeUnit(BaseModel):
         """Emit the upstream-valid wire shape.
 
         Stolperfalle extension fields are carried inside the optional
-        `extensions` object under `stolperstein:*` keys (upstream key
+        `extensions` object under `stolperfalle:*` keys (upstream key
         format `^[a-z0-9][a-z0-9_-]*:\\S+$`, max 20 properties); empty and
         null extension values produce no key.
         """
@@ -170,20 +170,20 @@ class KnowledgeUnit(BaseModel):
             out["superseded_by"] = self.superseded_by
 
         ext: dict[str, Any] = {
-            "stolperstein:severity": self.evidence.severity.value,
-            "stolperstein:kind": self.kind.value,
-            "stolperstein:status": self.status.value,
-            "stolperstein:staleness_policy": self.staleness_policy,
-            "stolperstein:owner_org": self.owner_org,
+            "stolperfalle:severity": self.evidence.severity.value,
+            "stolperfalle:kind": self.kind.value,
+            "stolperfalle:status": self.status.value,
+            "stolperfalle:staleness_policy": self.staleness_policy,
+            "stolperfalle:owner_org": self.owner_org,
         }
         if self.evidence.contributing_orgs:
-            ext["stolperstein:contributing_orgs"] = list(self.evidence.contributing_orgs)
+            ext["stolperfalle:contributing_orgs"] = list(self.evidence.contributing_orgs)
         if self.context.environment is not None:
-            ext["stolperstein:environment"] = self.context.environment
+            ext["stolperfalle:environment"] = self.context.environment
         if self.related:
-            ext["stolperstein:related"] = [r.model_dump() for r in self.related]
+            ext["stolperfalle:related"] = [r.model_dump() for r in self.related]
         if self.provenance.emergent is not None:
-            ext["stolperstein:emergent"] = self.provenance.emergent
+            ext["stolperfalle:emergent"] = self.provenance.emergent
         if ext:
             out["extensions"] = ext
 

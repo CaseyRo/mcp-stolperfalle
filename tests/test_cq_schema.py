@@ -113,7 +113,7 @@ def test_rich_output_fails_strict_schema_by_design():
 
 def test_strict_extensions_only_inside_the_slot():
     """Extension fields never appear as first-class properties — only under
-    `extensions` with `stolperstein:*` keys."""
+    `extensions` with `stolperfalle:*` keys."""
     ku = _make_ku()
     data = ku.to_cq_json_strict()
     for field in (
@@ -124,14 +124,14 @@ def test_strict_extensions_only_inside_the_slot():
     assert "environment" not in data.get("context", {})
 
     ext = data["extensions"]
-    assert ext["stolperstein:severity"] == "high"
-    assert ext["stolperstein:kind"] == "pitfall"
-    assert ext["stolperstein:status"] == "active"
-    assert ext["stolperstein:owner_org"] == "did:key:zA"
-    assert ext["stolperstein:staleness_policy"] == "confirm_or_decay_after_90d"
-    assert ext["stolperstein:environment"] == "xcode-16"
-    assert ext["stolperstein:contributing_orgs"] == ["did:key:zA", "did:key:zB"]
-    assert ext["stolperstein:related"] == [{"type": "extends", "target_id": "ku_" + "b" * 32}]
+    assert ext["stolperfalle:severity"] == "high"
+    assert ext["stolperfalle:kind"] == "pitfall"
+    assert ext["stolperfalle:status"] == "active"
+    assert ext["stolperfalle:owner_org"] == "did:key:zA"
+    assert ext["stolperfalle:staleness_policy"] == "confirm_or_decay_after_90d"
+    assert ext["stolperfalle:environment"] == "xcode-16"
+    assert ext["stolperfalle:contributing_orgs"] == ["did:key:zA", "did:key:zB"]
+    assert ext["stolperfalle:related"] == [{"type": "extends", "target_id": "ku_" + "b" * 32}]
 
 
 def test_strict_extension_keys_match_upstream_format():
@@ -154,11 +154,11 @@ def test_strict_empty_extension_values_produce_no_keys():
     )
     ext = ku.to_cq_json_strict()["extensions"]
     for absent in (
-        "stolperstein:environment", "stolperstein:contributing_orgs",
-        "stolperstein:related", "stolperstein:emergent",
+        "stolperfalle:environment", "stolperfalle:contributing_orgs",
+        "stolperfalle:related", "stolperfalle:emergent",
     ):
         assert absent not in ext
     assert None not in ext.values()
     # Always-valued fields still ride the slot.
-    assert ext["stolperstein:severity"] == "medium"
-    assert ext["stolperstein:kind"] == "pitfall"
+    assert ext["stolperfalle:severity"] == "medium"
+    assert ext["stolperfalle:kind"] == "pitfall"

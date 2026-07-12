@@ -16,7 +16,7 @@
     { "name": "Rationale & Context", "description": "The why: problem, strategic framing, what forced the decision" },
     { "name": "Requirements & Behavior", "description": "Formal SHALL requirements and WHEN/THEN scenarios" },
     { "name": "Design & Architecture", "description": "How it's built (store, migrations, serializers, hooks) and the trade-offs" },
-    { "name": "Schema & Interop", "description": "CQ strict-vs-rich, wire format, the stolperstein:* extension registry" },
+    { "name": "Schema & Interop", "description": "CQ strict-vs-rich, wire format, the stolperfalle:* extension registry" },
     { "name": "Status & Open Questions", "description": "Upstream verdicts, deferred Phase-2 scope, archive state" },
     { "name": "Sources", "description": "backlinks to all contributing source files", "required": true }
   ],
