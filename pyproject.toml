@@ -18,7 +18,7 @@ dependencies = [
     "authlib>=1.7.0",            # GHSA: CSRF in token cache handling
     "python-multipart>=0.0.27",  # GHSA: DoS via unbounded multipart headers
     "mcp>=1.28.1",               # PYSEC-2026-3481/3482/3483 (via fastmcp-slim)
-    "setuptools>=83.0.0",        # PYSEC-2026-3447 (via torch)
+    "setuptools>=84.0.0",        # PYSEC-2026-3447 (via torch)
 ]
 
 [project.scripts]
