@@ -63,7 +63,7 @@ async def _llm_extract(session_summary: str) -> list[ReflectCandidate] | None:
     if not settings.cq_llm_api_url:
         return None
 
-    import httpx  # noqa: E402 — lazy import to avoid hard dep when unconfigured
+    import httpx
 
     url = settings.cq_llm_api_url.rstrip("/") + "/chat/completions"
     headers = {"Content-Type": "application/json"}

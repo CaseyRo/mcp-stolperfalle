@@ -19,7 +19,6 @@ from stolperfalle.reflect import (
     reflect_with_dedup,
 )
 
-
 # ── Segment splitting ──────────────────────────────────────────────────
 
 

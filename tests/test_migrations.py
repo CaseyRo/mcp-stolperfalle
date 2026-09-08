@@ -15,7 +15,6 @@ import pytest
 
 from stolperfalle import migrations
 
-
 _V0_SCHEMA_DDL = """
 CREATE TABLE IF NOT EXISTS knowledge_units (
     id TEXT PRIMARY KEY,
@@ -129,6 +128,7 @@ def test_v0_db_fully_migrates(v0_db):
 
     # Every row's to_cq_json_strict() validates against vendored schema.
     from pathlib import Path
+
     from stolperfalle.store import KnowledgeStore
     schema = json.loads(
         (Path(__file__).parent / "fixtures" / "cq" / "knowledge_unit.json").read_text()
@@ -188,7 +188,7 @@ def test_rollback_on_mid_migration_failure(v0_db, monkeypatch):
     import stolperfalle.migrations.m0003_stolperstein_extensions as m3
     original_up = m3.up
 
-    def _sabotage(conn):  # noqa: F811 — intentional override
+    def _sabotage(conn):
         original_up(conn)
         raise RuntimeError("simulated failure mid-migration")
 
