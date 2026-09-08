@@ -81,7 +81,7 @@ async def _call_hook(path: str, payload: dict[str, Any], budget_s: float) -> dic
             timeout=budget_s,
         )
         return result
-    except asyncio.TimeoutError:
+    except TimeoutError:
         raise MCPUnreachable("budget exceeded") from None
     except urllib.error.HTTPError as e:
         # Never include the bearer token in the raised message.

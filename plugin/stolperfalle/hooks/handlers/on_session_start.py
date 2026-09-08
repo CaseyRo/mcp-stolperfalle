@@ -15,7 +15,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from _common import disabled  # noqa: E402
+from _common import disabled
 
 _HOOK_NAME = "SessionStart"
 

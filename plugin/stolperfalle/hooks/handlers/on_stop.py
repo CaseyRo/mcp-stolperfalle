@@ -38,8 +38,13 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from _common import disabled, mark_unreachable, session_id, unreachable_marker  # noqa: E402
-from _debug import trace  # noqa: E402
+from _common import (
+    disabled,
+    mark_unreachable,
+    session_id,
+    unreachable_marker,
+)
+from _debug import trace
 
 _HOOK_NAME = "Stop"
 _DEFAULT_THRESHOLD = 20

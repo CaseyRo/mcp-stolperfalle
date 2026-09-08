@@ -11,7 +11,7 @@ Validates two serializer surfaces:
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import jsonschema
@@ -56,8 +56,8 @@ def _make_ku(**overrides) -> KnowledgeUnit:
         evidence=Evidence(
             confidence=0.75,
             confirmations=3,
-            first_observed=datetime(2026, 3, 25, tzinfo=timezone.utc),
-            last_confirmed=datetime(2026, 3, 27, tzinfo=timezone.utc),
+            first_observed=datetime(2026, 3, 25, tzinfo=UTC),
+            last_confirmed=datetime(2026, 3, 27, tzinfo=UTC),
             contributing_orgs=["did:key:zA", "did:key:zB"],
             severity=KUSeverity.high,
         ),
@@ -65,7 +65,7 @@ def _make_ku(**overrides) -> KnowledgeUnit:
         status=KUStatus.active,
         provenance=Provenance(proposer_did="did:key:zA"),
         owner_org="did:key:zA",
-        last_queried_at=datetime(2026, 3, 27, tzinfo=timezone.utc),
+        last_queried_at=datetime(2026, 3, 27, tzinfo=UTC),
         related=[KURelation(type="extends", target_id="ku_" + "b" * 32)],
     )
     base.update(overrides)

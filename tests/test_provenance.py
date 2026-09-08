@@ -18,7 +18,7 @@ from stolperfalle.provenance import (
 
 def test_did_is_deterministic_from_keypair():
     """Same private key → same DID, always."""
-    priv, pub, did = generate_did_key()
+    priv, _pub, did = generate_did_key()
     # Round-trip via raw bytes and recompute
     pub2 = public_key_from_private(priv)
     did2 = derive_did_from_pubkey(pub2)

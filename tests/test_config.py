@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 
-
 def test_default_settings(monkeypatch):
     """Settings load with sane defaults."""
     monkeypatch.setenv("TRANSPORT", "stdio")

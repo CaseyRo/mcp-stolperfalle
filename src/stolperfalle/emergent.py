@@ -21,7 +21,7 @@ import logging
 import math
 import secrets
 import struct
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from stolperfalle.config import settings
 
@@ -40,7 +40,7 @@ def _deserialize_f32(blob: bytes) -> list[float]:
 def _cosine(a: list[float], b: list[float]) -> float:
     if not a or not b:
         return 0.0
-    dot = sum(x * y for x, y in zip(a, b))
+    dot = sum(x * y for x, y in zip(a, b, strict=False))
     na = math.sqrt(sum(x * x for x in a))
     nb = math.sqrt(sum(x * x for x in b))
     if na == 0 or nb == 0:
@@ -83,7 +83,7 @@ def detect_emergent(store) -> list[str]:
         return []
 
     db = store._get_db()
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     cutoff = (now - timedelta(days=_TTL_DAYS)).isoformat()
 
     # TTL prune

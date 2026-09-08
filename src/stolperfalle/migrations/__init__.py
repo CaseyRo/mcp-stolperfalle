@@ -20,9 +20,10 @@ import logging
 import pkgutil
 import shutil
 import sqlite3
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable, Protocol
+from typing import Protocol
 
 logger = logging.getLogger(__name__)
 
@@ -59,16 +60,16 @@ def _discover_migrations() -> list[Migration]:
         if not (name.startswith("m") and name[1:5].isdigit()):
             continue
         mod = importlib.import_module(f"{__name__}.{name}")
-        version = int(getattr(mod, "version"))
+        version = int(mod.version)
         if version in seen_versions:
             raise RuntimeError(f"duplicate migration version {version} in {name}")
         seen_versions.add(version)
         found.append(
             Migration(
                 version=version,
-                breaking=bool(getattr(mod, "breaking")),
-                slug=str(getattr(mod, "slug")),
-                up=getattr(mod, "up"),
+                breaking=bool(mod.breaking),
+                slug=str(mod.slug),
+                up=mod.up,
             )
         )
     found.sort(key=lambda x: x.version)

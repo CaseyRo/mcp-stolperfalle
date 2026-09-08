@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import struct
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
@@ -14,7 +14,7 @@ def _emb_bytes(vec: list[float]) -> bytes:
 
 def _plant_miss(store, text: str, embedding: list[float], offset_hours: int = 0) -> None:
     db = store._get_db()
-    ts = (datetime.now(timezone.utc) - timedelta(hours=offset_hours)).isoformat()
+    ts = (datetime.now(UTC) - timedelta(hours=offset_hours)).isoformat()
     db.execute(
         "INSERT INTO query_misses (text, embedding, created_at) VALUES (?, ?, ?)",
         [text, _emb_bytes(embedding), ts],

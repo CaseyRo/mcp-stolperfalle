@@ -15,7 +15,6 @@ import tempfile
 import time
 from pathlib import Path
 
-
 # Rotate the trace file once it exceeds this size. One ~150-byte line per
 # hook decision across ALL sessions adds up; without a cap the file grows
 # forever. At most cap + one .1 backup (~2 MiB total) lives on disk.
