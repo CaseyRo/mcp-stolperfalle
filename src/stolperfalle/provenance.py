@@ -21,7 +21,7 @@ import base64
 import logging
 import os
 import sqlite3
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from cryptography.hazmat.primitives import serialization
@@ -39,8 +39,9 @@ def default_key_path() -> str:
     """Default signing-key path — alongside the configured DB (not in /data
     hardcoded) so it works in dev, tests, and production identically.
     """
-    from stolperfalle.config import settings
     import os.path
+
+    from stolperfalle.config import settings
     db_dir = os.path.dirname(os.path.abspath(settings.cq_local_db_path))
     return os.path.join(db_dir, "stolperstein.key")
 
@@ -187,6 +188,6 @@ def get_or_create_install_did(
     pub_pem = public_key_to_pem(pub_bytes)
     conn.execute(
         "INSERT INTO install_identity (did, public_key, created_at) VALUES (?, ?, ?)",
-        [did, pub_pem, datetime.now(timezone.utc).isoformat()],
+        [did, pub_pem, datetime.now(UTC).isoformat()],
     )
     return did

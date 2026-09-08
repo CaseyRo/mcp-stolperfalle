@@ -6,13 +6,14 @@ read/write layer that sits on top of the migrated shape.
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import re
 import secrets
 import sqlite3
 import struct
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from statistics import median
 
 import sqlite_vec  # type: ignore[import-untyped]  # no stubs / py.typed marker
@@ -81,6 +82,9 @@ class KnowledgeStore:
         self._db: sqlite3.Connection | None = None
         self._embeddings = None
         self._install_did: str | None = None
+        # Strong refs for background tasks: the event loop only holds weak
+        # ones, so a bare create_task can be collected mid-execution.
+        self._emergent_tasks: set[asyncio.Task] = set()
 
     def _get_db(self) -> sqlite3.Connection:
         if self._db is None:
@@ -248,7 +252,7 @@ class KnowledgeStore:
                 f"Invalid kind '{kind}'. Must be one of: pitfall, workaround, "
                 "tool-recommendation. (tool-gap-signal is emergent-only; "
                 "gap-signal is deprecated — see query-miss patterns.)"
-            )
+            ) from None
         if kind_enum == KUKind.tool_gap_signal:
             raise ToolError(
                 "kind 'tool-gap-signal' is emergent-only — produced by the "
@@ -260,7 +264,7 @@ class KnowledgeStore:
         except ValueError:
             raise ToolError(
                 f"Invalid severity '{severity}'. Must be one of: low, medium, high, critical."
-            )
+            ) from None
 
         # Build the input model (validates summary length, etc.)
         try:
@@ -278,7 +282,7 @@ class KnowledgeStore:
                 staleness_policy=staleness_policy,
             )
         except Exception as e:
-            raise ToolError(f"Invalid propose input: {e}")
+            raise ToolError(f"Invalid propose input: {e}") from e
 
         # Duplicate detection via embedding similarity
         duplicate_response = await self._check_duplicate(ku_input)
@@ -287,7 +291,7 @@ class KnowledgeStore:
 
         # Insert
         ku_id = _generate_ku_id()
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         db.execute(
             """
             INSERT INTO knowledge_units (
@@ -397,7 +401,7 @@ class KnowledgeStore:
         # Own install always visible. Plus explicit trusted list.
         placeholders = ",".join(["?"] * len(trusted))
         sql = f"(ku.owner_org = ? OR ku.owner_org IN ({placeholders}))"
-        params: list = [self.install_did] + trusted
+        params: list = [self.install_did, *trusted]
         return sql, params
 
     async def query(
@@ -496,7 +500,7 @@ class KnowledgeStore:
         )[:limit]
 
         # Update last_queried_at
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         for r in ranked:
             db.execute(
                 "UPDATE knowledge_units SET last_queried_at = ? WHERE id = ?",
@@ -539,6 +543,7 @@ class KnowledgeStore:
             return
         try:
             import asyncio
+
             from stolperfalle.emergent import detect_emergent
 
             async def _run() -> None:
@@ -547,7 +552,9 @@ class KnowledgeStore:
                 await loop.run_in_executor(None, detect_emergent, self)
 
             loop = asyncio.get_running_loop()
-            loop.create_task(_run())
+            task = loop.create_task(_run())
+            self._emergent_tasks.add(task)
+            task.add_done_callback(self._emergent_tasks.discard)
         except RuntimeError:
             # No running loop (e.g. CLI context) — no background trigger.
             logger.debug("No event loop for emergent trigger; skipping background run")
@@ -567,7 +574,7 @@ class KnowledgeStore:
             )
 
         ku = self._row_to_ku(row)
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         new_confirmations = ku.evidence.confirmations + 1
 
         new_status = ku.status
@@ -710,7 +717,7 @@ class KnowledgeStore:
         else:
             conf_dist = {"mean": 0.0, "median": 0.0, "p25": 0.0, "p75": 0.0}
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         active_rows = db.execute(
             "SELECT last_confirmed_at, staleness_policy FROM knowledge_units "
             "WHERE status = 'active'"
@@ -779,7 +786,7 @@ class KnowledgeStore:
 
 def _parse_dt(value) -> datetime:
     if value is None:
-        return datetime.now(timezone.utc)
+        return datetime.now(UTC)
     if isinstance(value, datetime):
         return value
     return datetime.fromisoformat(value)

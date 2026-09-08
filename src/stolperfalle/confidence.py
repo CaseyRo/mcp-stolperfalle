@@ -14,7 +14,7 @@ Compatible with CQ's confidence model, extended with Stolperfalle's severity:
 from __future__ import annotations
 
 import math
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from stolperfalle.models import KUSeverity
 
@@ -40,7 +40,7 @@ def calculate_confidence(
     else:
         confirmation_boost = 0.0
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     days_since = (now - last_confirmed).total_seconds() / 86400
     if days_since > staleness_days:
         days_past = days_since - staleness_days

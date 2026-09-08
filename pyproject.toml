@@ -51,6 +51,22 @@ name = "pytorch-cpu"
 url = "https://download.pytorch.org/whl/cpu"
 explicit = true
 
+[tool.ruff]
+target-version = "py312"
+
+[tool.ruff.lint]
+# Pinned explicitly rather than inheriting ruff's defaults, which widen between
+# releases: 0.15.12 -> 0.16.5 turned a clean tree into 25 findings, six of them
+# BLE001 objections to defensive `except Exception` that this server wants.
+# A linter's rule set should be a decision, not whatever shipped last.
+select = ["E4", "E7", "E9", "F", "I", "UP", "B", "RUF"]
+ignore = [
+    # UP042 wants StrEnum, which changes str(KUKind.pitfall) from
+    # "KUKind.pitfall" to "pitfall". These values are persisted, so that is a
+    # data-format decision and not something to slip into a tooling bump.
+    "UP042",
+]
+
 [tool.uv.sources]
 # nebula-1 is a CPU-only VM: lock CPU torch wheels for linux so the Docker
 # build installs from the lockfile without pulling ~5 GB of nvidia-cuda-*.

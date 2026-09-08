@@ -18,7 +18,7 @@ See `docs/cq-extensions.md` for the registry of every field that exists in
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Annotated, Any
 
@@ -84,8 +84,8 @@ class Evidence(BaseModel):
 
     confidence: float = Field(ge=0.0, le=1.0, default=0.5)
     confirmations: int = 0
-    first_observed: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    last_confirmed: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    first_observed: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    last_confirmed: datetime = Field(default_factory=lambda: datetime.now(UTC))
     contributing_orgs: list[str] = Field(default_factory=list)  # extension
     severity: KUSeverity = KUSeverity.medium  # extension
 
@@ -198,7 +198,7 @@ def _iso(dt: datetime | None) -> str | None:
     if dt is None:
         return None
     if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=timezone.utc)
+        dt = dt.replace(tzinfo=UTC)
     return dt.isoformat()
 
 
