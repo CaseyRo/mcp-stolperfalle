@@ -105,7 +105,7 @@ def _acquire_lock(fd: int, timeout_s: float = 0.1) -> None:
             return
         except BlockingIOError:
             if time.monotonic() >= deadline:
-                raise _LockTimeout()
+                raise _LockTimeout() from None
             time.sleep(0.005)
 
 

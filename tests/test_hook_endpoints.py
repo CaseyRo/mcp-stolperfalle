@@ -209,7 +209,7 @@ class TestTransportGuard:
         monkeypatch.setattr(cfg, "transport", "stdio")
         monkeypatch.setattr(cfg, "mcp_stolperfalle_api_key", "stmcp_test_key")
 
-        from stolperfalle.server import hook_reflect, hook_query
+        from stolperfalle.server import hook_query, hook_reflect
         for handler in (hook_query, hook_reflect):
             resp = await handler(_MockRequest(headers=_auth_headers()))
             assert resp.status_code == 503

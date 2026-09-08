@@ -65,6 +65,12 @@ ignore = [
     # "KUKind.pitfall" to "pitfall". These values are persisted, so that is a
     # data-format decision and not something to slip into a tooling bump.
     "UP042",
+    # RUF001/2/3 flag "ambiguous" unicode — en dashes in comments, x in
+    # "3 x retry". That rule exists to catch homoglyph attacks in identifiers;
+    # in prose it just objects to correct typography.
+    "RUF001",
+    "RUF002",
+    "RUF003",
 ]
 
 [tool.uv.sources]

@@ -26,9 +26,9 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from _common import disabled, query_and_emit, session_id  # noqa: E402
-from _debug import trace  # noqa: E402
-from _signals import is_structured_error  # noqa: E402
+from _common import disabled, query_and_emit, session_id
+from _debug import trace
+from _signals import is_structured_error
 
 _HOOK_NAME = "PostToolUse"
 _STDERR_CHARS = 4096
