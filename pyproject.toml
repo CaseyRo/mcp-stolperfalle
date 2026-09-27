@@ -73,6 +73,10 @@ ignore = [
     "RUF003",
 ]
 
+[tool.ruff.lint.per-file-ignores]
+# Vendored verbatim from CDiT-infrastructure/scripts/mcp_usage_middleware.py.
+"src/stolperfalle/usage.py" = ["UP017"]
+
 [tool.uv.sources]
 # nebula-1 is a CPU-only VM: lock CPU torch wheels for linux so the Docker
 # build installs from the lockfile without pulling ~5 GB of nvidia-cuda-*.
