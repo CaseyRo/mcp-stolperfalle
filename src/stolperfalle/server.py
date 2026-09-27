@@ -19,6 +19,7 @@ from stolperfalle.models import (
     ReflectResult,
     StatusReport,
 )
+from stolperfalle.usage import UsageMiddleware
 
 SERVER_INSTRUCTIONS = """\
 Stolperfalle is an experiential knowledge base for AI coding agents. It stores
@@ -102,6 +103,7 @@ mcp = FastMCP(
     ],
 )
 
+mcp.add_middleware(UsageMiddleware("stolperfalle"))
 
 async def _ctx_info(ctx: Context | None, message: str) -> None:
     """Best-effort `ctx.info`. Never let progress/logging break a tool call.
