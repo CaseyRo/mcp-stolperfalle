@@ -1,6 +1,6 @@
 ## Context
 
-This is a greenfield Python MCP server (`mcp-stolperstein`) that captures and retrieves experiential knowledge for AI coding agents. It runs as a Docker container on Zentralwerk (Komodo-managed, Tailscale-accessible) and integrates with Claude Code via MCP protocol and with Siyuan Note via its HTTP API.
+This is a greenfield Python MCP server (`mcp-stolperstein`) that captures and retrieves experiential knowledge for AI coding agents. It runs as a Docker container on <host> (orchestrator-managed, Tailscale-accessible) and integrates with Claude Code via MCP protocol and with Siyuan Note via its HTTP API.
 
 The project aligns with Mozilla AI's CQ standard (March 2026) — same KU interchange format, same confidence model — but adds local UX (Siyuan sync, Claude Code hooks) that CQ doesn't provide. We build a CQ-compatible local node, not a fork.
 
@@ -139,7 +139,7 @@ mcp-stolperstein/
 - `PORT` (default: `8716`)
 - `MCP_STOLPERSTEIN_API_KEY` (SecretStr, auto-generated if empty, prefix `stmcp_`)
 - `MCP_STOLPERSTEIN_PUBLIC_URL` (optional, for OAuth discovery)
-- `KEYCLOAK_ISSUER` (default: `https://auth.cdit-works.de/realms/cdit-mcp`)
+- `KEYCLOAK_ISSUER` (default: `https://auth.example.com/realms/cdit-mcp`)
 - `KEYCLOAK_AUDIENCE` (default: `mcp-stolperstein`)
 
 **Embeddings:**
@@ -153,7 +153,7 @@ mcp-stolperstein/
 - `CQ_SIYUAN_NOTEBOOK` (target notebook name)
 - `CQ_SIYUAN_TOKEN` (Siyuan API auth)
 
-**Why:** Docker-native, Komodo-compatible (env vars are the stack config interface, secrets via `[[VAR]]` vault injection), no file to mount or manage. Pydantic Settings with `SecretStr` for sensitive values matches the proven mcp-siyuan pattern.
+**Why:** Docker-native, orchestrator-compatible (env vars are the stack config interface, secrets via `[[VAR]]` vault injection), no file to mount or manage. Pydantic Settings with `SecretStr` for sensitive values matches the proven mcp-siyuan pattern.
 
 ### D8: Siyuan sync — async fire-and-forget with retry queue
 
@@ -174,7 +174,7 @@ mcp-stolperstein/
 
 **[CQ schema stability]** CQ is 3 weeks old — the interchange format may change. → Mitigation: Our `models.py` Pydantic models are the single source of truth. A schema version field lets us handle migrations. We pin to a known CQ schema version and update explicitly.
 
-**[Single SQLite file = single point of failure]** → Mitigation: Docker volume mount + Komodo backup policy. SQLite is a file — rsync/rclone backup is trivial. For disaster recovery, re-seed from Siyuan (human-reviewed KUs are the source of truth).
+**[Single SQLite file = single point of failure]** → Mitigation: Docker volume mount + volume backup policy. SQLite is a file — rsync/rclone backup is trivial. For disaster recovery, re-seed from Siyuan (human-reviewed KUs are the source of truth).
 
 **[Reflect tool quality depends on LLM]** The `reflect` tool asks an LLM to extract generalizable learnings — quality varies. → Mitigation: Reflect produces *candidates*, not committed KUs. An agent or human must explicitly `propose` each one. Bad candidates are discarded, not stored.
 

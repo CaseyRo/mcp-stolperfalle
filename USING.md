@@ -22,12 +22,12 @@ If you just want to *use* Stolperfalle: do the one-time setup below, then forget
 
 ### 1. Make sure the server is reachable
 
-Stolperfalle hooks need to call the MCP server over HTTP. The production URL is `https://mcp-stolperfalle.cdit-dev.de` (Cloudflare Access protected). You need:
+Stolperfalle hooks need to call the MCP server over HTTP. Use the public URL of your deployment (the examples below use `https://stolperfalle.example.com`). You need:
 
 ```bash
 # ~/.zshenv or your shell rc
-export MCP_STOLPERFALLE_PUBLIC_URL="https://mcp-stolperfalle.cdit-dev.de"
-export MCP_STOLPERFALLE_API_KEY="stmcp_…"   # the bearer token from 1Password
+export MCP_STOLPERFALLE_PUBLIC_URL="https://stolperfalle.example.com"
+export MCP_STOLPERFALLE_API_KEY="stmcp_…"   # the server's bearer token, from your secret store
 ```
 
 Confirm it works:
@@ -45,7 +45,7 @@ You should see a JSON response (either with a match or `{"results": [], "count":
 From this repo:
 
 ```bash
-cd ~/dev/stolpersteine
+cd mcp-stolperfalle   # your clone of this repo
 # Register the local marketplace with Claude Code (one-time)
 claude plugins marketplace add ./.claude-plugin/marketplace.json
 claude plugins install stolperfalle
@@ -206,7 +206,7 @@ All optional. Leave empty to use global defaults.
 
 ## For the curious: where the data lives
 
-- **KU data + public key + DID**: `/data/stolperstein.db` (in the Komodo-managed Docker volume `stolperstein-data`). Filenames/volume name intentionally unchanged by the product rename.
+- **KU data + public key + DID**: `/data/stolperstein.db` (in the Docker volume `stolperstein-data`). Filenames/volume name intentionally unchanged by the product rename.
 - **Private signing key**: `/data/stolperstein.key` (mode 0o600). **Treat as sensitive.** Excluded from volume backups.
 - **OAuth client cache (FastMCP)**: `/data/fastmcp/`.
 - **Pre-migration backups**: `/data/stolperstein.db.bak-pre-v<N>` — created automatically on breaking schema changes, preserved until you run `mcp-stolperfalle prune-backups --confirm`.

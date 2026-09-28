@@ -14,7 +14,7 @@ Two serializers implement this split in `src/stolperfalle/models.py`:
 - **`to_cq_json_strict()`** — emits the upstream-valid wire shape. Stolperfalle extension fields are carried inside the upstream **`extensions` slot** under `stolperfalle:*` keys (e.g. `evidence.severity` → `extensions["stolperfalle:severity"]`). Validated on every commit against a vendored, pinned copy of the upstream schema in `tests/fixtures/cq/knowledge_unit.json`.
 - **`to_cq_json_rich()`** — emits the full internal superset with every extension as a first-class field (`evidence.severity`, top-level `kind`, etc.), *no* `extensions` object. Used for local dumps, debugging, and extension-aware consumers.
 
-A third serializer, `to_cq_v0()`, emits the pre-alignment legacy shape for the Siyuan-sync transition, gated by `CQ_SIYUAN_SCHEMA_VERSION=0`.
+A third serializer, `to_cq_v0()`, was specified for the Siyuan-sync transition; it was removed together with the sync module and no longer exists in the code.
 
 The canonical extension registry is `docs/cq-extensions.md`; every `stolperfalle:*` key on the wire must appear there. Wire compatibility across schema changes is enforced by the versioned migration framework under `src/stolperfalle/migrations/`. Upstream engagement runs through discussion [#286](https://github.com/mozilla-ai/cq/discussions/286), scoping issue [#406](https://github.com/mozilla-ai/cq/issues/406), and the slot-merge PR [#453](https://github.com/mozilla-ai/cq/pull/453).
 

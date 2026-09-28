@@ -36,7 +36,6 @@ Six MCP tools: `query`, `propose`, `confirm`, `flag`, `reflect`, `status` (see `
 **KU model (`models.py`).** Nested Pydantic: `Context`, `Evidence`, `Provenance`. On the wire:
 - `to_cq_json_strict()` — upstream-valid, extensions stripped, `created_by` from `proposer_did`, flag reasons mapped (`dangerous` → `incorrect` + local marker).
 - `to_cq_json_rich()` — full internal superset.
-- `to_cq_v0()` — legacy shape for the Siyuan sync transition (gated by `CQ_SIYUAN_SCHEMA_VERSION`).
 
 Stolperfalle extensions (all local-only, all documented in `docs/cq-extensions.md`): `evidence.severity`, `evidence.contributing_orgs`, `context.environment`, top-level `kind`/`status`/`staleness_policy`/`related[]`/`owner_org`, `provenance.graduation_history`/`emergent`.
 
@@ -48,9 +47,9 @@ Stolperfalle extensions (all local-only, all documented in `docs/cq-extensions.m
 
 **Reflect (`reflect.py`).** LLM-driven extraction (OpenAI-compatible endpoint) with a heuristic NLP fallback. Candidates return flat `context_*` + `severity` so callers pass straight to `propose()`.
 
-**Auth (`auth.py`).** FastMCP's `MultiAuth`: Cloudflare Access OIDC for browser OAuth clients + static bearer tokens for Claude Code / n8n. Only engages when `TRANSPORT=http`. `hmac.compare_digest` for token comparison. `komodo.toml` still references the old `KEYCLOAK_*` vars — source of truth for new deployments is `compose.yaml` + `.env.example`.
+**Auth (`auth.py`).** FastMCP's `MultiAuth`: Cloudflare Access OIDC for browser OAuth clients + static bearer tokens for Claude Code / n8n. Only engages when `TRANSPORT=http`. `hmac.compare_digest` for token comparison. Source of truth for deployment config is `compose.yaml` + `.env.example`.
 
-**Sync (`sync/`).** `cq_team.py` emits strict-CQ on graduation and validates inbound payloads against the vendored schema before sanitizing + storing. `siyuan.py` honors `CQ_SIYUAN_SCHEMA_VERSION` (0 = legacy shape during transition). Both are gated behind env and fully optional.
+**Sync.** There is no sync module: the SiYuan and cq team sync described in the early openspec changes was removed as dead code. `compose.yaml` passes no `CQ_TEAM_*` / `CQ_SIYUAN_*` variables.
 
 **Hook handlers (`plugin/stolperfalle/hooks/handlers/`).** `on_prompt.py`, `on_bash.py`, `on_stop.py` + shared helpers (`_client.py`, `_rate_limit.py`, `_inject.py`, `_signals.py`, `_debug.py`). Require the server reachable over HTTP — hooks use `MCP_STOLPERFALLE_PUBLIC_URL` + `MCP_STOLPERFALLE_API_KEY`. Handlers are fully stdlib (no fastmcp import — Claude Code runs them with whatever `python3` is on $PATH); `_client.py` POSTs to the `/hook/*` REST endpoints (1.5s query budget, bearer-token sanitization in error surfaces). All decisions are traceable via `STOLPERFALLE_HOOKS_DEBUG=1` → `$TMPDIR/stolperfalle-hooks-debug.jsonl`; user-facing Stop-hook output must go through the JSON `systemMessage` field (stderr is invisible on exit 0). `on_bash.py` is registered for BOTH `PostToolUse` and `PostToolUseFailure` — PostToolUse never fires on nonzero exits (claude-code#6371), so without the failure registration the hook misses exactly the events it exists for. For a local-path marketplace install, hooks execute from THIS repo (`CLAUDE_PLUGIN_ROOT` = the repo's plugin dir), not the `~/.claude/plugins/cache` copy — handler edits are live for the next hook firing, but `hooks.json` registration changes need a Claude Code restart.
 
@@ -85,7 +84,7 @@ def up(conn: sqlite3.Connection) -> None:
 
 ## Deployment
 
-Production runs via Komodo on server `nebula-1` (stack resource `git-mcp-stolperfalle-nebula`, renamed from `git-mcp-stolperstein-nebula` on 2026-07-12 via the Komodo `RenameStack` API — with compose `project_name` pinned to the old `git-mcp-stolperstein-nebula` so the existing `stolperstein-data`/`fastmcp-data` volumes are reused, not recreated. The git webhook was recreated for the new listener URL as part of the rename, since that URL embeds the stack name), auto-deploys from `main`, exposed at `https://mcp-stolperfalle.cdit-dev.de` through the co-located `git-cloudflared` tunnel on the same host. The container persists SQLite to the `stolperstein-data` volume (on-disk volume name intentionally unchanged by the product rename — see `openspec/changes/archive/2026-07-11-rename-product-name/design.md`) and FastMCP's OAuth client cache to `fastmcp-data` (`FASTMCP_HOME=/data/fastmcp`); both live on Hetzner volume `HC_Volume_105339184`. (Former host `ubuntu-smurf-mirror` is EOL and removed from Komodo.)
+Production builds from source on each merge to `main` (`build: .`, no registry) and sits behind a tunnel and an MCP portal. The container persists SQLite to the `stolperstein-data` volume (on-disk volume name intentionally unchanged by the product rename — see `openspec/changes/archive/2026-07-11-rename-product-name/design.md`) and FastMCP's OAuth client cache to `fastmcp-data` (`FASTMCP_HOME=/data/fastmcp`). The compose project name is pinned to the pre-rename value so those volumes are reused, not recreated. Deployment host details are kept out of this public repo.
 
 **The private signing key (`/data/stolperstein.key`) is sensitive.** Filename intentionally unchanged by the rename. Exclude from volume backups and `docker cp`. Deploy-time checklist + rollback procedure in `README.md`.
 
@@ -93,9 +92,9 @@ Production runs via Komodo on server `nebula-1` (stack resource `git-mcp-stolper
 
 ## fastmcp 4 idioms
 
-- `fastmcp>=4.0.10,<5.0.0`; streamable-http with `stateless_http=True` passed to `run()`/`http_app()`, never the constructor (v4 rejects it). No `allowed_hosts` workaround: that was the 3.4.3 host guard.
+- `fastmcp>=4.0.10,<5.0.0`; streamable-http with `stateless_http=True` passed to `run()`/`http_app()`, never the constructor (v4 rejects it).
 - Annotations are snake_case (`read_only_hint`, `destructive_hint`, ...). CI runs with `FASTMCP_MCP_CAMELCASE_COMPAT=false`, so camelCase access fails the build.
 - Failures raise `ToolError`. A returned error payload is logged by usage telemetry as `outcome: ok`.
-- `src/stolperfalle/usage.py` is vendored verbatim from `CDiT-infrastructure/scripts/mcp_usage_middleware.py`; re-copy it, never edit it here.
-- No release workflow and no tags: Komodo redeploys `main` on push (webhook plus polling).
-- Testing: the `mcp-testing` skill. Release/deploy: the `cdit-release-pipeline` skill. Fleet conventions: `CDiT-infrastructure/docs/wiki/topics/mcp-fleet.md`.
+- `src/stolperfalle/usage.py` is vendored verbatim from the fleet's shared usage middleware; re-copy it, never edit it here.
+- Releases are tag-only by convention (no version-bump commits); this repo has no release workflow or tags yet. A merge to `main` redeploys (rebuild from source). Required checks: `test` and `security`.
+- Testing: the `mcp-testing` skill. Release/deploy: the `cdit-release-pipeline` skill.

@@ -88,8 +88,8 @@
 - [x] 10.1 Update `README.md`: migration procedure (volume snapshot, `mcp-stolperstein migrate`, rollback from `.bak-pre-v1` + `stolperstein.key` backup), key-file sensitivity, `prune-backups` post-cleanup.
 - [x] 10.2 Update `.env.example` with all new env vars (key, sync, emergent, hooks, trust).
 - [x] 10.3 Update `CLAUDE.md`: migration framework, hook capability, emergent-signals module, org-boundaries foundation; note Phase 1 vs Phase 2 scope.
-- [ ] 10.4 Pre-deploy: tag current prod commit; document Komodo redeploy + volume-snapshot procedure in deploy notes.
-- [ ] 10.5 Post-deploy verify on `ubuntu-smurf-mirror`: `mcp-stolperstein status --debug` shows `schema_version=4`, no `proposer_did IS NULL`, no `owner_org IS NULL`, KU totals match pre-migration, `tool_gap_signals.grandfathered` equals pre-migration `gap-signal` count.
+- [ ] 10.4 Pre-deploy: tag current prod commit; document the redeploy + volume-snapshot procedure in deploy notes.
+- [ ] 10.5 Post-deploy verify on `<host>`: `mcp-stolperstein status --debug` shows `schema_version=4`, no `proposer_did IS NULL`, no `owner_org IS NULL`, KU totals match pre-migration, `tool_gap_signals.grandfathered` equals pre-migration `gap-signal` count.
 - [ ] 10.6 Post-deploy cleanup (48h after): `mcp-stolperstein prune-backups --confirm`.
 
 ## 11. Upstream engagement (non-code)

@@ -13,7 +13,7 @@ Mozilla AI released **cq** (March 2026) — an open standard for shared agent le
 - **CQ team sync** — optional upstream connection to a CQ team API for pulling shared knowledge and graduating local KUs
 - **Claude Code plugin** (SKILL.md + hooks.json) enabling auto-query on errors and a `/stolperstein:reflect` skill for end-of-session knowledge extraction
 - **Siyuan sync** — one-way push rendering active KUs as structured documents for human review (our differentiator over stock CQ)
-- **Docker deployment** on Zentralwerk (Komodo-managed, Tailscale-accessible)
+- **Docker deployment** on <host> (orchestrator-managed, Tailscale-accessible)
 
 ## Capabilities
 
@@ -33,7 +33,7 @@ _None — greenfield project._
 ## Impact
 
 - **New repo**: `mcp-stolperstein` (Python, FastMCP, SQLite)
-- **New Docker service**: Komodo stack on Zentralwerk, Tailscale-exposed
+- **New Docker service**: Compose stack on <host>, Tailscale-exposed
 - **Claude Code config**: New MCP server entry in settings, new plugin in `.claude/` for consuming projects (starting with Hauswart)
 - **Dependencies**: FastMCP, sqlite-vec, sentence-transformers (or API-based embeddings), httpx (Siyuan API, CQ team API)
 - **CQ ecosystem**: Compatible local node — can operate standalone or connect to CQ team/global tiers. KU schema follows `knowledge-unit.schema.json` interchange format. Future contribution path to mozilla-ai/cq upstream.
