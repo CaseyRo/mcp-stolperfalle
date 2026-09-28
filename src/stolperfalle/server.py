@@ -232,11 +232,22 @@ async def hook_query(request):
             {"error": "domain must be a list of strings"}, status_code=400
         )
 
+    from stolperfalle import relevance
     from stolperfalle.store import store
     result = await store.query(
-        text=text, domain=domain, confidence_min=confidence_min, limit=limit
+        text=text, domain=domain, confidence_min=confidence_min,
+        limit=max(limit, relevance.SHORTLIST),
     )
-    return JSONResponse(result)
+    # Relevance gate (hook path only): keep what Jev judges applies; None = degraded, today's results.
+    gated = await relevance.gate(text, result.get("results") or [])
+    if gated is None:
+        results = (result.get("results") or [])[:limit]
+        return JSONResponse({**result, "results": results, "count": len(results), "degraded": True})
+    results = gated["results"][:limit]
+    return JSONResponse({
+        "results": results, "count": len(results),
+        "hints": gated["hints"], "relevance_model": gated["model"],
+    })
 
 
 @mcp.custom_route("/hook/reflect", methods=["POST"])

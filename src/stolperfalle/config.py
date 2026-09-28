@@ -35,6 +35,9 @@ class Settings(BaseSettings):
     mcp_stolperfalle_api_key: SecretStr = SecretStr("")
     mcp_stolperfalle_public_url: str = ""
 
+    # Jev (TypeSafe) relevance gate on /hook/query; unset = today's ungated results
+    typesafe_api_key: SecretStr = SecretStr("")
+
     # Cloudflare Access OIDC (replaces Keycloak)
     cf_access_team: str = ""
     cf_access_client_id: str = ""
