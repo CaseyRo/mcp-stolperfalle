@@ -36,6 +36,7 @@ services:
       # when team / SiYuan sync is actually implemented.
       - CQ_LLM_API_URL=${CQ_LLM_API_URL:-}
       - CQ_LLM_API_KEY=${CQ_LLM_API_KEY:-}
+      - TYPESAFE_API_KEY=${TYPESAFE_API_KEY:-}
       - CQ_LLM_MODEL=${CQ_LLM_MODEL:-gpt-4o-mini}
       - FASTMCP_HOME=/data/fastmcp
     volumes:
