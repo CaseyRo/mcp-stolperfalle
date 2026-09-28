@@ -1,10 +1,10 @@
 name: Security Audit
 
 on:
+  # No paths filter on pull_request: `security` is a required check on main, and a
+  # path-filtered required check never reports on PRs that don't touch deps, which
+  # blocks them forever (hit on #69, 2026-09-28). The audit itself is ~20 s.
   pull_request:
-    paths:
-      - 'pyproject.toml'
-      - 'uv.lock'
   push:
     branches: [main]
     paths:
