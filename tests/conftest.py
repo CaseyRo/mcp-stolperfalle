@@ -37,4 +37,5 @@ def store(tmp_db, monkeypatch):
 
     s = KnowledgeStore(tmp_db)
     s._embeddings = NoOpEmbeddings()
-    return s
+    yield s
+    s.close()

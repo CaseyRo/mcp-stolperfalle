@@ -94,6 +94,11 @@ class KnowledgeStore:
             self._install_did = self._read_install_did()
         return self._db
 
+    def close(self) -> None:
+        if self._db is not None:
+            self._db.close()
+            self._db = None
+
     def _init_baseline(self) -> None:
         """Create the v0-baseline tables if they don't exist. Migrations then
         transform them to current (v6). For fresh installs this plus the

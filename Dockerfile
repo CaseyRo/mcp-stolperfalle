@@ -29,8 +29,12 @@ COPY --from=builder /usr/local/bin/mcp-stolperfalle /usr/local/bin/mcp-stolperfa
 COPY --from=builder /root/.cache/huggingface /root/.cache/huggingface
 COPY --from=builder /app/src ./src
 
+# ca-certificates: httpx2 (fastmcp 4) uses the OS trust store.
 # Create non-root user with a real HOME so HuggingFace / FastMCP caches resolve.
-RUN addgroup --system mcp && \
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends ca-certificates && \
+    rm -rf /var/lib/apt/lists/* && \
+    addgroup --system mcp && \
     adduser --system --ingroup mcp --home /home/mcp mcp && \
     mkdir -p /data && chown mcp:mcp /data && \
     mkdir -p /home/mcp/.cache && \
