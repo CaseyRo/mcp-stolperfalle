@@ -63,7 +63,7 @@ async def gate(text: str, candidates: list[dict]) -> dict | None:
         logger.warning("relevance gate degraded: %s", type(e).__name__)
         return None
 
-    scored = sorted(zip(probs, candidates), key=lambda pc: pc[0], reverse=True)
+    scored = sorted(zip(probs, candidates, strict=True), key=lambda pc: pc[0], reverse=True)
     return {
         "results": [ku for p, ku in scored if p >= ACT],
         "hints": [ku for p, ku in scored if CONFIRM <= p < ACT],
