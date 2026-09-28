@@ -70,7 +70,7 @@ class Settings(BaseSettings):
         key = generate_api_key()
         self.mcp_stolperfalle_api_key = SecretStr(key)
         # Never log the secret value — container stdout is captured by the
-        # json-file driver and Komodo's log pane (pentest secret-leak finding).
+        # json-file driver and the deploy tool's log pane (pentest secret-leak finding).
         logger.warning(
             "MCP_STOLPERFALLE_API_KEY was empty; generated an ephemeral key "
             "(value not logged). Set MCP_STOLPERFALLE_API_KEY to a stable value "

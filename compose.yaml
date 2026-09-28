@@ -20,12 +20,12 @@ services:
       # redeploy silently create a fresh DB / rotate the signing key.
       - CQ_LOCAL_DB_PATH=/data/stolperstein.db
       - MCP_STOLPERFALLE_API_KEY=${MCP_STOLPERFALLE_API_KEY:-}
-      - MCP_STOLPERFALLE_PUBLIC_URL=${MCP_STOLPERFALLE_PUBLIC_URL:-https://mcp-stolperfalle.cdit-dev.de}
+      - MCP_STOLPERFALLE_PUBLIC_URL=${MCP_STOLPERFALLE_PUBLIC_URL}
       # Recovery path: if /data/stolperstein.key is ever lost, set this (base64
-      # of the 32-byte key) in Komodo env and it wins over the file. Defaults
+      # of the 32-byte key) in the stack env and it wins over the file. Defaults
       # empty -> normal boot loads the key from the volume.
       - MCP_STOLPERFALLE_SIGNING_KEY=${MCP_STOLPERFALLE_SIGNING_KEY:-}
-      - CF_ACCESS_TEAM=${CF_ACCESS_TEAM:-cdit-dev}
+      - CF_ACCESS_TEAM=${CF_ACCESS_TEAM}
       - CF_ACCESS_CLIENT_ID=${CF_ACCESS_CLIENT_ID}
       - CF_ACCESS_CLIENT_SECRET=${CF_ACCESS_CLIENT_SECRET}
       - CQ_EMBEDDING_MODEL=${CQ_EMBEDDING_MODEL:-all-MiniLM-L6-v2}

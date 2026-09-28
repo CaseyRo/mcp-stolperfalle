@@ -78,6 +78,6 @@ external = ["BLE001", "S110"]
 
 
 [tool.uv.sources]
-# nebula-1 is a CPU-only VM: lock CPU torch wheels for linux so the Docker
+# Deploy host is CPU-only: lock CPU torch wheels for linux so the Docker
 # build installs from the lockfile without pulling ~5 GB of nvidia-cuda-*.
 torch = [{ index = "pytorch-cpu", marker = "sys_platform == 'linux'" }]

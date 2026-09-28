@@ -111,7 +111,7 @@ async def health(_request):
 
     Returns 200 with a small JSON payload when the server can read its own
     store and report a schema version. Used by the Docker HEALTHCHECK and
-    by any upstream (Komodo / Cloudflare / Tailscale) that wants a
+    by any upstream proxy or orchestrator that wants a
     no-auth GET endpoint to verify the container is serving.
 
     Intentionally does NOT reveal `proposer_did` or KU content — just
