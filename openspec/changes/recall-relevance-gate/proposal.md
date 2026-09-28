@@ -26,5 +26,5 @@ None.
 ## Impact
 
 - `src/stolperfalle/server.py` (`hook_query`), new `src/stolperfalle/relevance.py`, `src/stolperfalle/config.py`.
-- One HTTP call to `api.typesafe.ai` per hook query (~1.7k input tokens, ~$0.00007); adds ~0.5–1 s to a hook that has a 5 s budget.
+- One HTTP call to `api.typesafe.ai` per hook query (~1.7k input tokens, ~$0.00007); adds ~0.3 s (measured median) to a call the hook gives 1.5 s.
 - Data sent: error text (≤ 4096 chars) and KU summary/action — internal data under the jev data-boundary spec.

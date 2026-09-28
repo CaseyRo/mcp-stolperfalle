@@ -1,6 +1,6 @@
 ## Context
 
-See proposal.md. The lab eval's question, criteria, and shortlist size are the tuned starting point (`~/dev/jev/evals/stolperfalle_recall.py`); the hook calls `/hook/query` with `limit=1` under a 5 s timeout.
+See proposal.md. The lab eval's question, criteria, and shortlist size are the tuned starting point (`~/dev/jev/evals/stolperfalle_recall.py`); the hook calls `/hook/query` with `limit=1` under a 1.5 s client budget.
 
 ## Decisions
 
@@ -10,7 +10,7 @@ See proposal.md. The lab eval's question, criteria, and shortlist size are the t
 
 **One request per hook query, one Noul per candidate.** Independent questions over the same state run in parallel inside one request. Shortlist 5 (the eval found one right answer in 5th place). Question text and criteria are copied from the eval, with thresholds and model pin alongside in `relevance.py`, the one reviewed location.
 
-**Timeout 2.5 s, then degrade.** Leaves half the hook's 5 s budget for search and transport.
+**Timeout 0.9 s, then degrade.** The hook client (`_client.py`) gives `/hook/query` 1.5 s in total, not the hook's 5 s process timeout; a slower answer would be dropped client-side and marked unreachable instead of degrading. Measured 2026-09-28 on 8 real errors: search median 0.23 s (max 0.39), Jev median 0.31 s (max 0.35), sum max 0.72 s.
 
 ## Risks / Trade-offs
 

@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 URL = "https://api.typesafe.ai/v1/systemone"
 MODEL = "jev-1.13.0"
 SHORTLIST = 5
-TIMEOUT_S = 2.5  # the hook's whole budget is 5 s
+TIMEOUT_S = 0.9  # hook client gives /hook/query 1.5 s in total; search takes ≤0.4 s (measured 2026-09-28)
 # ponytail: untuned (the eval had no labelled truth); re-run the lab eval after a week of live traffic.
 ACT = 0.80
 CONFIRM = 0.50
