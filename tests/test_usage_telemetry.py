@@ -12,13 +12,10 @@ from stolperfalle.server import mcp
 
 
 @pytest.mark.asyncio
-async def test_call_tool_writes_one_usage_line(tmp_db, monkeypatch, capsys):
+async def test_call_tool_writes_one_usage_line(store, monkeypatch, capsys):
     import stolperfalle.store as store_mod
-    from stolperfalle.embeddings import NoOpEmbeddings
 
-    isolated = store_mod.KnowledgeStore(tmp_db)
-    isolated._embeddings = NoOpEmbeddings()
-    monkeypatch.setattr(store_mod, "store", isolated)
+    monkeypatch.setattr(store_mod, "store", store)
 
     async with Client(mcp) as client:
         await client.call_tool("status", {})

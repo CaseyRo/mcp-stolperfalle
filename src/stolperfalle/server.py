@@ -7,7 +7,7 @@ import logging
 import sys
 from pathlib import Path
 
-from fastmcp import Context, FastMCP
+from fastmcp import FastMCP
 from mcp.types import Icon, ToolAnnotations
 from starlette.responses import JSONResponse
 
@@ -97,38 +97,13 @@ mcp = FastMCP(
     icons=[
         Icon(
             src="data:image/png;base64,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",
-            mimeType="image/png",
+            mime_type="image/png",
             sizes=["96x96"],
         ),
     ],
 )
 
 mcp.add_middleware(UsageMiddleware("stolperfalle"))
-
-async def _ctx_info(ctx: Context | None, message: str) -> None:
-    """Best-effort `ctx.info`. Never let progress/logging break a tool call.
-
-    `ctx.info`/`ctx.report_progress` require an established MCP session; when a
-    tool is invoked outside one (e.g. in-process calls), they raise. Logging is
-    advisory, so swallow those failures rather than fail the underlying work.
-    """
-    if ctx is None:
-        return
-    try:
-        await ctx.info(message)
-    except Exception:
-        logging.getLogger(__name__).debug("ctx.info unavailable", exc_info=True)
-
-
-async def _ctx_progress(ctx: Context | None, progress: float, total: float) -> None:
-    """Best-effort `ctx.report_progress` (see `_ctx_info`)."""
-    if ctx is None:
-        return
-    try:
-        await ctx.report_progress(progress=progress, total=total)
-    except Exception:
-        logging.getLogger(__name__).debug("ctx.report_progress unavailable", exc_info=True)
-
 
 @mcp.custom_route("/health", methods=["GET"])
 async def health(_request):
@@ -289,9 +264,9 @@ async def hook_reflect(request):
 @mcp.tool(
     annotations=ToolAnnotations(
         title="Query knowledge units",
-        readOnlyHint=True,
-        idempotentHint=True,
-        openWorldHint=False,
+        read_only_hint=True,
+        idempotent_hint=True,
+        open_world_hint=False,
     )
 )
 async def query(
@@ -327,9 +302,9 @@ async def query(
 @mcp.tool(
     annotations=ToolAnnotations(
         title="Propose a knowledge unit",
-        readOnlyHint=False,
-        idempotentHint=False,
-        openWorldHint=False,
+        read_only_hint=False,
+        idempotent_hint=False,
+        open_world_hint=False,
     )
 )
 async def propose(
@@ -343,7 +318,6 @@ async def propose(
     context_environment: str | None = None,
     context_pattern: str | None = None,
     severity: str = "medium",
-    ctx: Context | None = None,
 ) -> KUResponse:
     """Propose a new Knowledge Unit from a discovered insight.
 
@@ -381,7 +355,6 @@ async def propose(
         )
     """
     from stolperfalle.store import store
-    await _ctx_info(ctx, f"Proposing {kind} KU across domains={domains}")
     result = await store.propose(
         summary=summary,
         detail=detail,
@@ -394,22 +367,18 @@ async def propose(
         context_pattern=context_pattern,
         severity=severity,
     )
-    if result.get("duplicate_of"):
-        await _ctx_info(ctx, f"Duplicate of existing KU {result['duplicate_of']}; not re-created")
-    else:
-        await _ctx_info(ctx, f"Created KU {result['ku']['id']}")
     return KUResponse.model_validate(result)
 
 
 @mcp.tool(
     annotations=ToolAnnotations(
         title="Confirm a knowledge unit",
-        readOnlyHint=False,
-        idempotentHint=False,
-        openWorldHint=False,
+        read_only_hint=False,
+        idempotent_hint=False,
+        open_world_hint=False,
     )
 )
-async def confirm(ku_id: str, ctx: Context | None = None) -> KUResponse:
+async def confirm(ku_id: str) -> KUResponse:
     """Confirm an existing Knowledge Unit — increments confirmations and confidence.
 
     NOT idempotent: calling twice increments confirmations twice and changes the
@@ -422,19 +391,16 @@ async def confirm(ku_id: str, ctx: Context | None = None) -> KUResponse:
     """
     from stolperfalle.store import store
     result = await store.confirm(ku_id=ku_id)
-    await _ctx_info(
-        ctx, f"Confirmed {ku_id}: confidence now {result['ku']['evidence']['confidence']}"
-    )
     return KUResponse.model_validate(result)
 
 
 @mcp.tool(
     annotations=ToolAnnotations(
         title="Flag a knowledge unit",
-        readOnlyHint=False,
-        idempotentHint=False,
-        destructiveHint=True,
-        openWorldHint=False,
+        read_only_hint=False,
+        idempotent_hint=False,
+        destructive_hint=True,
+        open_world_hint=False,
     )
 )
 async def flag(
@@ -442,7 +408,6 @@ async def flag(
     reason: str,
     detail: str = "",
     superseded_by: str | None = None,
-    ctx: Context | None = None,
 ) -> KUResponse:
     """Flag a Knowledge Unit as stale, incorrect, superseded, dangerous, or duplicate.
 
@@ -464,21 +429,18 @@ async def flag(
     result = await store.flag(
         ku_id=ku_id, reason=reason, detail=detail, superseded_by=superseded_by
     )
-    await _ctx_info(
-        ctx, f"Flagged {ku_id} as {reason}; status now {result['ku']['status']}"
-    )
     return KUResponse.model_validate(result)
 
 
 @mcp.tool(
     annotations=ToolAnnotations(
         title="Reflect on a session for candidate KUs",
-        readOnlyHint=True,
-        idempotentHint=True,
-        openWorldHint=True,  # may call a configured external LLM endpoint
+        read_only_hint=True,
+        idempotent_hint=True,
+        open_world_hint=True,  # may call a configured external LLM endpoint
     )
 )
-async def reflect(session_summary: str, ctx: Context | None = None) -> ReflectResult:
+async def reflect(session_summary: str) -> ReflectResult:
     """Extract generalizable learnings from a session summary.
 
     Returns ranked candidate KUs scored by generalizability, each pre-filled
@@ -492,24 +454,16 @@ async def reflect(session_summary: str, ctx: Context | None = None) -> ReflectRe
     """
     from stolperfalle.reflect import reflect_with_dedup
     from stolperfalle.store import store
-    await _ctx_info(ctx, "Extracting candidate KUs from session summary")
-    await _ctx_progress(ctx, 0, 1)
     result = await reflect_with_dedup(session_summary, store=store)
-    await _ctx_progress(ctx, 1, 1)
-    await _ctx_info(
-        ctx,
-        f"Extracted {len(result.get('candidates', []))} candidate(s) "
-        f"via {result.get('method', 'none')}",
-    )
     return ReflectResult.model_validate(result)
 
 
 @mcp.tool(
     annotations=ToolAnnotations(
         title="Report store health",
-        readOnlyHint=True,
-        idempotentHint=True,
-        openWorldHint=False,
+        read_only_hint=True,
+        idempotent_hint=True,
+        open_world_hint=False,
     )
 )
 async def status(debug: bool = False) -> StatusReport:
@@ -752,12 +706,14 @@ def _cmd_migrate(args: argparse.Namespace) -> int:
             return 2
 
     conn = connect(db_path)
-    from_version = migrations.current_version(conn)
     try:
+        from_version = migrations.current_version(conn)
         result = migrations.run(conn, db_path=db_path)
     except Exception as e:
         print(f"Migration failed: {e}", file=sys.stderr)
         return 1
+    finally:
+        conn.close()
     if not result.applied:
         print(f"already at version {result.to_version}")
         return 0
@@ -845,9 +801,6 @@ def main() -> None:
             stateless_http=True,
             host=settings.host,
             port=settings.port,
-            allowed_hosts=[
-                h.strip() for h in settings.allowed_hosts.split(",") if h.strip()
-            ],
         )
     else:
         mcp.run()
