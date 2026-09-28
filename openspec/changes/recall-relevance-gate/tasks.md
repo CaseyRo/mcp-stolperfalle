@@ -9,5 +9,5 @@
 
 ## 2. Rollout
 
-- [ ] 2.1 Add `TYPESAFE_API_KEY` as a Komodo variable on the stolperfalle stack and deploy; verify a `/hook/query` call returns without `degraded`
-- [ ] 2.2 Casey adds `modules/common/claude.sh` to zsh-setup and fast-forwards `~/.zsh-setup`; verify `type claude` shows the wrapper and a failing command in a new session gets either no hint or a relevant one
+- [x] 2.1 Add `TYPESAFE_API_KEY` as a Komodo variable on the stolperfalle stack and deploy; verify a `/hook/query` call returns without `degraded`
+- [x] 2.2 Casey adds `modules/common/claude.sh` to zsh-setup and fast-forwards `~/.zsh-setup`; verify `type claude` shows the wrapper and a failing command in a new session gets either no hint or a relevant one
