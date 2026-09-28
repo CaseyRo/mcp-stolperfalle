@@ -196,6 +196,46 @@ class TestHookQueryRegression:
         assert resp.status_code == 200
         assert (await _body(resp))["count"] == 1
 
+    @pytest.mark.asyncio
+    async def test_key_unset_returns_todays_results_degraded(self, http_settings, monkeypatch):
+        from pydantic import SecretStr
+        monkeypatch.setattr(http_settings, "typesafe_api_key", SecretStr(""))
+        seen = {}
+
+        async def fake_query(*, text, domain, confidence_min, limit):
+            seen["limit"] = limit
+            return {"results": [{"id": f"ku{i}"} for i in range(limit)], "count": limit}
+
+        import stolperfalle.store as store_mod
+        monkeypatch.setattr(store_mod.store, "query", fake_query)
+
+        from stolperfalle.server import hook_query
+        resp = await hook_query(_MockRequest(headers=_auth_headers(), body={"text": "err", "limit": 1}))
+        body = await _body(resp)
+        assert seen["limit"] == 5                      # shortlist fetched
+        assert body["results"] == [{"id": "ku0"}]      # trimmed back to the requested limit
+        assert body["degraded"] is True
+
+    @pytest.mark.asyncio
+    async def test_gate_filters_to_relevant(self, http_settings, monkeypatch):
+        async def fake_query(*, text, domain, confidence_min, limit):
+            return {"results": [{"id": "ku0"}, {"id": "ku1"}], "count": 2}
+
+        async def fake_gate(text, candidates):
+            return {"results": [{"id": "ku1"}], "hints": [{"id": "ku0"}], "model": "jev-1.13.0"}
+
+        import stolperfalle.relevance as rel_mod
+        import stolperfalle.store as store_mod
+        monkeypatch.setattr(store_mod.store, "query", fake_query)
+        monkeypatch.setattr(rel_mod, "gate", fake_gate)
+
+        from stolperfalle.server import hook_query
+        resp = await hook_query(_MockRequest(headers=_auth_headers(), body={"text": "err"}))
+        body = await _body(resp)
+        assert body["results"] == [{"id": "ku1"}] and body["count"] == 1
+        assert body["hints"] == [{"id": "ku0"}]
+        assert "degraded" not in body
+
 
 # --- transport guard ------------------------------------------------------
 
