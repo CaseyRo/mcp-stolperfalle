@@ -72,10 +72,10 @@ ignore = [
     "RUF002",
     "RUF003",
 ]
+# The vendored usage.py carries `noqa: BLE001, S110` for fleet repos that select
+# those rules; declaring them external keeps RUF100 from flagging the directive.
+external = ["BLE001", "S110"]
 
-[tool.ruff.lint.per-file-ignores]
-# Vendored verbatim from CDiT-infrastructure/scripts/mcp_usage_middleware.py.
-"src/stolperfalle/usage.py" = ["UP017"]
 
 [tool.uv.sources]
 # nebula-1 is a CPU-only VM: lock CPU torch wheels for linux so the Docker

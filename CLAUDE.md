@@ -57,7 +57,7 @@ Stolperfalle extensions (all local-only, all documented in `docs/cq-extensions.m
 ## Adding a new MCP tool
 
 1. Add the method to `KnowledgeStore` (async, returns a dict via `.model_dump(mode="json")`).
-2. Register in `server.py` with `@mcp.tool(annotations=ToolAnnotations(...))`. Be honest about `idempotentHint` — `confirm` and `flag` are explicitly `False` because they mutate counters / state.
+2. Register in `server.py` with `@mcp.tool(annotations=ToolAnnotations(...))`. Be honest about `idempotent_hint` — `confirm` and `flag` are explicitly `False` because they mutate counters / state.
 3. Raise `fastmcp.exceptions.ToolError` with an actionable recovery hint on validation failure (never bare `ValueError` — LLM clients see it as an opaque internal error).
 4. Add a test in `tests/` using the `store` fixture (temp DB + NoOp embeddings + zero-signing-key).
 
@@ -90,3 +90,12 @@ Production runs via Komodo on server `nebula-1` (stack resource `git-mcp-stolper
 **The private signing key (`/data/stolperstein.key`) is sensitive.** Filename intentionally unchanged by the rename. Exclude from volume backups and `docker cp`. Deploy-time checklist + rollback procedure in `README.md`.
 
 **Phase 1 vs Phase 2.** `owner_org` + `TRUSTED_ORGS` land as **foundation only** — read-filter visibility, default-trust-all. Enforceable write-side org permissions, per-org UI, selective graduation are Phase 2 scope in a follow-up change. Don't attempt them here.
+
+## fastmcp 4 idioms
+
+- `fastmcp>=4.0.10,<5.0.0`; streamable-http with `stateless_http=True` passed to `run()`/`http_app()`, never the constructor (v4 rejects it). No `allowed_hosts` workaround: that was the 3.4.3 host guard.
+- Annotations are snake_case (`read_only_hint`, `destructive_hint`, ...). CI runs with `FASTMCP_MCP_CAMELCASE_COMPAT=false`, so camelCase access fails the build.
+- Failures raise `ToolError`. A returned error payload is logged by usage telemetry as `outcome: ok`.
+- `src/stolperfalle/usage.py` is vendored verbatim from `CDiT-infrastructure/scripts/mcp_usage_middleware.py`; re-copy it, never edit it here.
+- No release workflow and no tags: Komodo redeploys `main` on push (webhook plus polling).
+- Testing: the `mcp-testing` skill. Release/deploy: the `cdit-release-pipeline` skill. Fleet conventions: `CDiT-infrastructure/docs/wiki/topics/mcp-fleet.md`.
