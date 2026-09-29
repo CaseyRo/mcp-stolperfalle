@@ -64,6 +64,8 @@ Each hook SHALL keep a schema-validated state file at `$FASTMCP_HOME/hooks-state
 
 ### SiYuan sync
 
+> Removed from the code after this wiki was compiled (dead-code cleanup). The requirements below are kept as spec history only.
+
 - Enabled only when `CQ_SIYUAN_URL` and `CQ_SIYUAN_NOTEBOOK` are set; otherwise all MCP tools operate normally with no SiYuan behavior or errors.
 - WHEN a KU reaches `active` (after first confirmation) — THEN the system SHALL create a SiYuan document titled by the KU summary with structured blocks for detail, action, domain tags, confidence, and metadata.
 - WHEN an active KU's confidence changes via `confirm`/`flag` — THEN the existing SiYuan document SHALL be updated.
@@ -95,7 +97,7 @@ Each hook SHALL keep a schema-validated state file at `$FASTMCP_HOME/hooks-state
 - Tightened `SKILL.md` and the reflect skill to **v1 tool shapes** (flat `context_*` + `severity`, `domains` not `domain`, no `gap-signal` as a proposable kind) and required the hook-active / disable-hatch / dual-channel documentation sections.
 - Broadened MCP config to include **Cloudflare Access** (bearer token) alongside Tailscale, and updated the stdio command to `mcp-stolperfalle`.
 
-**Optional / deferred.** SiYuan sync is entirely optional (env-gated) and downstream-only. `CQ_SIYUAN_ARCHIVE_MODE` leaves archived-KU handling (move vs delete) as a deployment choice. Per-project overrides — `STOLPERFALLE_ERROR_PATTERNS`, `STOLPERFALLE_REFLECT_THRESHOLD`, `STOLPERFALLE_HOOK_COOLDOWN_S`, `STOLPERFALLE_HOOKS_DISABLED` — are all configuration knobs rather than fixed behavior. No open contradictions surfaced across the specs; the main evolution to track is that hook behavior now lives in `claude-hooks`, with `claude-code-integration` reduced to plugin packaging, SKILL.md, the reflect skill, and MCP-server configuration.
+**Optional / deferred.** SiYuan sync was specified as optional (env-gated) and downstream-only, and has since been removed. `CQ_SIYUAN_ARCHIVE_MODE` leaves archived-KU handling (move vs delete) as a deployment choice. Per-project overrides — `STOLPERFALLE_ERROR_PATTERNS`, `STOLPERFALLE_REFLECT_THRESHOLD`, `STOLPERFALLE_HOOK_COOLDOWN_S`, `STOLPERFALLE_HOOKS_DISABLED` — are all configuration knobs rather than fixed behavior. No open contradictions surfaced across the specs; the main evolution to track is that hook behavior now lives in `claude-hooks`, with `claude-code-integration` reduced to plugin packaging, SKILL.md, the reflect skill, and MCP-server configuration.
 
 ## Sources [coverage: high — 4 sources]
 

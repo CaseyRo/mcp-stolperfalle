@@ -134,7 +134,7 @@ File `upstream-issue-draft.md` (already drafted in this change folder) on `mozil
 - **Plugin**: `hooks.json` becomes a real manifest; three Python handlers under `plugin/stolperstein/hooks/handlers/`; SKILL.md rewritten.
 - **Tests**: `test_cq_schema.py` pins real upstream schema; validates both strict and rich serializers; new `test_migrations.py`, `test_hooks.py` (including sanitization cases), `test_provenance.py`, `test_emergent.py`, `test_org_boundaries.py`.
 - **Dependencies**: `cryptography` (Ed25519, already transitively present), `jsonschema` (dev group).
-- **Deployment**: Komodo redeploy triggers migration chain; operator checklist adds volume snapshot, post-deploy verify, `prune-backups` cleanup.
+- **Deployment**: Redeploy triggers migration chain; operator checklist adds volume snapshot, post-deploy verify, `prune-backups` cleanup.
 - **Downstream**: Siyuan sync + CQ team sync re-serialize; Siyuan gets the `CQ_SIYUAN_SCHEMA_VERSION=0` escape hatch until its follow-up change lands. CQ team sync uses `to_cq_json_strict()`.
 - **Upstream**: `upstream-issue-draft.md` filed on `mozilla-ai/cq` proposing extensions for adoption. Linked from cdit-works.de positioning.
 - **Strategic**: This change is explicitly **Phase 1 of the machine-readable org layer** (CDI-999). Phase 2 (enforceable org boundaries, selective graduation UX, richer emergent aggregation) will land as a follow-up once Phase 1 proves the shape.

@@ -157,7 +157,7 @@ Add a `TRUSTED_ORGS` env var (comma-separated DIDs; default: `*` meaning trust-a
 ## Risks / Trade-offs
 
 - **[Migration on production DB corrupts rows]** → `.bak-pre-v<N>` snapshot every breaking migration + refuse-to-overwrite; integration test full chain against `tests/fixtures/migration_v0.db`.
-- **[`stolperstein.key` gets copied into Docker volume backups]** → document explicit exclusion in deploy notes; Komodo deploy step lists it as a sensitive file; key loss = new DID on next boot (provenance chain breaks, but data intact).
+- **[`stolperstein.key` gets copied into Docker volume backups]** → document explicit exclusion in deploy notes; the deploy step lists it as a sensitive file; key loss = new DID on next boot (provenance chain breaks, but data intact).
 - **[Hook latency adds perceptible delay]** → fire-and-forget + 500ms budget; handler terminates before tool response returns; measured on CI fixture.
 - **[Rate-limit state file corrupts under concurrent writes]** → `fcntl.flock` + tmp-file-then-rename; schema validation on read; fall back to no-injection on contention.
 - **[Emergent-signal aggregation false-positives into noise]** → conservative thresholds (≥5 misses, ≥2 sessions, cosine ≥0.8); `flag()` a bad emergent KU archives it; emergent count visible in `status()` for operator to eyeball.
@@ -170,7 +170,7 @@ Add a `TRUSTED_ORGS` env var (comma-separated DIDs; default: `*` meaning trust-a
 ## Migration Plan
 
 1. **Pre-deploy**: tag current prod commit; snapshot `stolperstein-data` volume to `stolperstein-data-pre-v1`.
-2. **Deploy**: Komodo re-deploys container. On first boot:
+2. **Deploy**: The orchestrator re-deploys container. On first boot:
    - runner checks `schema_version` (NULL = v0);
    - copies `stolperstein.db` → `stolperstein.db.bak-pre-v1`;
    - applies `m0001_cq_v1_layout` (flat context, severity, last_confirmed_at, superseded_by top-level);
