@@ -42,12 +42,12 @@ def test_ensure_api_key_preserves_existing(monkeypatch):
 
 def test_base_url_from_public_url(monkeypatch):
     """base_url uses public URL when set."""
-    monkeypatch.setenv("MCP_STOLPERFALLE_PUBLIC_URL", "https://mcp-stolperfalle.cdit-dev.de")
+    monkeypatch.setenv("MCP_STOLPERFALLE_PUBLIC_URL", "https://mcp-stolperfalle.example.com")
 
     from stolperfalle.config import Settings
 
     s = Settings()
-    assert s.base_url == "https://mcp-stolperfalle.cdit-dev.de"
+    assert s.base_url == "https://mcp-stolperfalle.example.com"
 
 
 def test_base_url_computed_from_host_port(monkeypatch):

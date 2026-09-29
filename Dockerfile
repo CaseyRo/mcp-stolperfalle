@@ -4,12 +4,10 @@ WORKDIR /app
 COPY pyproject.toml uv.lock README.md ./
 COPY src/ ./src/
 
-# Install EXACTLY what uv.lock pins — never re-resolve at build time.
-# (Incident 2026-07-07: an unpinned `pip install .` here silently picked up
-# fastmcp 3.4.3, whose new Host-header guard 421'd all of production.)
+# Install EXACTLY what uv.lock pins; never re-resolve at build time.
 # uv.lock pins linux torch to the CPU wheel index via tool.uv.sources, so
 # the extra-index-url is required for pip to find the +cpu build; it saves
-# ~5 GB of nvidia-cuda-* packages nebula-1 (CPU-only VM) can't use.
+# ~5 GB of nvidia-cuda-* packages a CPU-only host can't use.
 RUN pip install --no-cache-dir uv && \
     uv export --frozen --no-dev --no-emit-project -o /tmp/requirements.txt && \
     pip install --no-cache-dir --require-hashes --extra-index-url https://download.pytorch.org/whl/cpu \
@@ -56,13 +54,8 @@ EXPOSE 8716
 # Unauthenticated /health returns 200 when the server is up and migrations
 # have finished. No bearer token needed → healthcheck logs don't flood
 # with 401s.
-# Probe with the PUBLIC Host header, not localhost — so the healthcheck fails
-# exactly when external traffic would (the fastmcp 3.4.3 host-guard 421 blind
-# spot: localhost stayed 200 while the public hostname was rejected).
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
   CMD python3 -c "import urllib.request,sys; \
-req=urllib.request.Request('http://localhost:8716/health', \
-headers={'Host':'mcp-stolperfalle.cdit-dev.de'}); \
-urllib.request.urlopen(req, timeout=3); sys.exit(0)"
+urllib.request.urlopen('http://localhost:8716/health', timeout=3); sys.exit(0)"
 
 CMD ["mcp-stolperfalle"]
