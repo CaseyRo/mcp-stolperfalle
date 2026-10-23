@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -197,61 +198,45 @@ class TestHeuristicExtraction:
 
 
 class TestLLMExtraction:
+    @staticmethod
+    def _configure(monkeypatch):
+        from pydantic import SecretStr
+        monkeypatch.setattr("stolperfalle.config.settings.cq_llm_api_key", SecretStr("test-key"))
+        monkeypatch.setattr("stolperfalle.config.settings.cq_llm_model", "test-model")
+
+    @staticmethod
+    def _mock_client(response):
+        client = AsyncMock()
+        client.messages.create.return_value = response
+        client.__aenter__ = AsyncMock(return_value=client)
+        client.__aexit__ = AsyncMock(return_value=None)
+        return patch("anthropic.AsyncAnthropic", return_value=client), client
+
     @pytest.mark.asyncio
     async def test_llm_not_configured_returns_none(self, monkeypatch):
-        monkeypatch.setenv("CQ_LLM_API_URL", "")
-        # Re-import to pick up env change
+        from pydantic import SecretStr
+        monkeypatch.setattr("stolperfalle.config.settings.cq_llm_api_key", SecretStr(""))
         from stolperfalle.reflect import _llm_extract
         result = await _llm_extract("test session")
         assert result is None
 
     @pytest.mark.asyncio
     async def test_llm_returns_candidates(self, monkeypatch):
-        llm_response_data = {
-            "choices": [{
-                "message": {
-                    "content": json.dumps([{
-                        "summary": "Webhook HMAC secrets must match exactly",
-                        "detail": "Attio webhooks show as active even when HMAC fails",
-                        "action": "Verify HMAC secret matches between provider and server",
-                        "domain": ["webhooks", "auth"],
-                        "kind": "pitfall",
-                        "generalizability_score": 0.8,
-                    }])
-                }
-            }]
-        }
-
-        # Patch settings directly on the reflect module's import
-        monkeypatch.setattr(
-            "stolperfalle.config.settings.cq_llm_api_url",
-            "http://fake-llm:8080/v1",
+        self._configure(monkeypatch)
+        text = json.dumps({"candidates": [{
+            "summary": "Webhook HMAC secrets must match exactly",
+            "detail": "Attio webhooks show as active even when HMAC fails",
+            "action": "Verify HMAC secret matches between provider and server",
+            "domains": ["webhooks", "auth"],
+            "kind": "pitfall",
+            "generalizability_score": 0.8,
+        }]})
+        response = SimpleNamespace(
+            stop_reason="end_turn", stop_details=None,
+            content=[SimpleNamespace(type="thinking", thinking=""), SimpleNamespace(type="text", text=text)],
         )
-        from pydantic import SecretStr
-        monkeypatch.setattr(
-            "stolperfalle.config.settings.cq_llm_api_key",
-            SecretStr("test-key"),
-        )
-        monkeypatch.setattr(
-            "stolperfalle.config.settings.cq_llm_model",
-            "test-model",
-        )
-
-        import httpx
-
-        mock_response = httpx.Response(
-            status_code=200,
-            json=llm_response_data,
-            request=httpx.Request("POST", "http://fake-llm:8080/v1/chat/completions"),
-        )
-
-        with patch("httpx.AsyncClient") as mock_client:
-            mock_instance = AsyncMock()
-            mock_instance.post.return_value = mock_response
-            mock_instance.__aenter__ = AsyncMock(return_value=mock_instance)
-            mock_instance.__aexit__ = AsyncMock(return_value=None)
-            mock_client.return_value = mock_instance
-
+        patcher, client = self._mock_client(response)
+        with patcher:
             from stolperfalle.reflect import _llm_extract
             result = await _llm_extract("test session about webhooks")
 
@@ -259,6 +244,19 @@ class TestLLMExtraction:
         assert len(result) == 1
         assert result[0].summary == "Webhook HMAC secrets must match exactly"
         assert result[0].kind == KUKind.pitfall
+        kwargs = client.messages.create.call_args.kwargs
+        assert kwargs["model"] == "test-model"
+        assert kwargs["output_config"]["format"]["type"] == "json_schema"
+        assert "temperature" not in kwargs  # rejected by current models
+
+    @pytest.mark.asyncio
+    async def test_llm_refusal_falls_back(self, monkeypatch):
+        self._configure(monkeypatch)
+        response = SimpleNamespace(stop_reason="refusal", stop_details={"category": None}, content=[])
+        patcher, _ = self._mock_client(response)
+        with patcher:
+            from stolperfalle.reflect import _llm_extract
+            assert await _llm_extract("test session") is None
 
 
 # ── Integration: reflect_with_dedup ────────────────────────────────────
@@ -267,7 +265,7 @@ class TestLLMExtraction:
 @pytest.mark.asyncio
 async def test_reflect_with_dedup_heuristic(monkeypatch):
     """reflect_with_dedup works with heuristic fallback (no LLM configured)."""
-    monkeypatch.setenv("CQ_LLM_API_URL", "")
+    monkeypatch.setenv("CQ_LLM_API_KEY", "")
 
     result = await reflect_with_dedup(
         "1. **Docker bridge DNS fails**: Default bridge has no DNS resolution between containers.\n"
@@ -281,7 +279,7 @@ async def test_reflect_with_dedup_heuristic(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_reflect_empty_summary(monkeypatch):
-    monkeypatch.setenv("CQ_LLM_API_URL", "")
+    monkeypatch.setenv("CQ_LLM_API_KEY", "")
     result = await reflect_with_dedup("", store=None)
     assert result["candidates"] == []
 
@@ -289,7 +287,7 @@ async def test_reflect_empty_summary(monkeypatch):
 @pytest.mark.asyncio
 async def test_reflect_with_store_dedup(store, monkeypatch):
     """Candidates matching existing KUs are filtered out."""
-    monkeypatch.setenv("CQ_LLM_API_URL", "")
+    monkeypatch.setenv("CQ_LLM_API_KEY", "")
 
     # The store fixture uses NoOpEmbeddings, so dedup won't actually filter
     # (no embeddings to compare). But it should still work without errors.

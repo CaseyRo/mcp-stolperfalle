@@ -1,6 +1,6 @@
 """Extract candidate KUs from session summaries.
 
-Primary: LLM-based extraction via OpenAI-compatible API (when configured).
+Primary: LLM-based extraction via the Anthropic Messages API (when CQ_LLM_API_KEY is set).
 Fallback: heuristic NLP extraction using text splitting and keyword classification.
 """
 
@@ -27,6 +27,9 @@ that would help a DIFFERENT agent on a DIFFERENT project in the future.
 
 Rules:
 - Only extract learnings that are transferable — skip project-specific decisions.
+- Skip bugs in the project's own code (a failing test, a null reference in one of
+  its components): extract only traps in tools, platforms, libraries or workflows
+  that will recur elsewhere.
 - Each candidate must have: summary (max 280 chars), detail, action (imperative),
   domains (technology tags, at least one), kind (pitfall|workaround|tool-recommendation),
   and generalizability_score (0.0-1.0).
@@ -34,17 +37,16 @@ Rules:
   1.0 = universally useful across all projects.
 - Optionally include: context_languages, context_frameworks, context_environment,
   context_pattern, severity (low|medium|high|critical, default medium).
-- Return an empty array if there are no generalizable learnings.
-- Be selective — quality over quantity. 3 good candidates beat 8 mediocre ones.
-
-Respond with ONLY a JSON array of objects. No markdown, no explanation."""
+- Write every field in English, even when the session summary is in another language.
+- Return an empty candidates array if there are no generalizable learnings.
+- Be selective — quality over quantity. 3 good candidates beat 8 mediocre ones."""
 
 _USER_TEMPLATE = """\
 Extract generalizable knowledge units from this session summary:
 
 {session_summary}
 
-Return a JSON array where each element has:
+Each candidate has:
 - "summary": string (max 280 chars, concise description of the learning)
 - "detail": string (full context of what happened and why it matters)
 - "action": string (imperative — what to do when encountering this)
@@ -55,49 +57,69 @@ Return a JSON array where each element has:
   "context_environment": string, "context_pattern": string,
   "severity": "low" | "medium" | "high" | "critical" """
 
+_STR_ARRAY = {"type": "array", "items": {"type": "string"}}
+# Structured output: the API guarantees JSON matching this schema.
+_CANDIDATES_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "candidates": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "summary": {"type": "string"},
+                    "detail": {"type": "string"},
+                    "action": {"type": "string"},
+                    "domains": _STR_ARRAY,
+                    "kind": {"type": "string", "enum": ["pitfall", "workaround", "tool-recommendation"]},
+                    "generalizability_score": {"type": "number"},
+                    "context_languages": _STR_ARRAY,
+                    "context_frameworks": _STR_ARRAY,
+                    "context_environment": {"type": "string"},
+                    "context_pattern": {"type": "string"},
+                    "severity": {"type": "string", "enum": ["low", "medium", "high", "critical"]},
+                },
+                "required": ["summary", "detail", "action", "domains", "kind", "generalizability_score"],
+                "additionalProperties": False,
+            },
+        }
+    },
+    "required": ["candidates"],
+    "additionalProperties": False,
+}
+
 
 async def _llm_extract(session_summary: str) -> list[ReflectCandidate] | None:
-    """Extract candidates using an OpenAI-compatible chat completions API."""
+    """Extract candidates with Claude via the Anthropic Messages API."""
     from stolperfalle.config import settings
 
-    if not settings.cq_llm_api_url:
+    llm_key = settings.cq_llm_api_key.get_secret_value()
+    if not llm_key:
         return None
 
-    import httpx
-
-    url = settings.cq_llm_api_url.rstrip("/") + "/chat/completions"
-    headers = {"Content-Type": "application/json"}
-    llm_key = settings.cq_llm_api_key.get_secret_value()
-    if llm_key:
-        headers["Authorization"] = f"Bearer {llm_key}"
-
-    payload = {
-        "model": settings.cq_llm_model,
-        "messages": [
-            {"role": "system", "content": _SYSTEM_PROMPT},
-            {"role": "user", "content": _USER_TEMPLATE.format(session_summary=session_summary)},
-        ],
-        "temperature": 0.3,
-    }
+    import anthropic
 
     try:
-        async with httpx.AsyncClient(timeout=60.0) as client:
-            resp = await client.post(url, json=payload, headers=headers)
-            resp.raise_for_status()
+        async with anthropic.AsyncAnthropic(api_key=llm_key, timeout=60.0) as client:
+            resp = await client.messages.create(
+                model=settings.cq_llm_model,
+                max_tokens=16000,
+                system=_SYSTEM_PROMPT,
+                messages=[
+                    {"role": "user", "content": _USER_TEMPLATE.format(session_summary=session_summary)},
+                ],
+                # Low effort: one-shot extraction; picked in the 2026-10 model comparison.
+                output_config={
+                    "effort": "low",
+                    "format": {"type": "json_schema", "schema": _CANDIDATES_SCHEMA},
+                },
+            )
 
-        data = resp.json()
-        content = data["choices"][0]["message"]["content"]
-
-        # Strip markdown code fences if present
-        content = content.strip()
-        if content.startswith("```"):
-            content = re.sub(r"^```(?:json)?\s*", "", content)
-            content = re.sub(r"\s*```$", "", content)
-
-        raw = json.loads(content)
-        if not isinstance(raw, list):
-            logger.warning("LLM returned non-array: %s", type(raw))
+        if resp.stop_reason == "refusal":
+            logger.warning("LLM declined reflect extraction: %s", resp.stop_details)
             return None
+        text = next(b.text for b in resp.content if b.type == "text")
+        raw = json.loads(text)["candidates"]
 
         # Proposable kinds only — tool-gap-signal is emergent-only.
         proposable_kinds = {"pitfall", "workaround", "tool-recommendation"}
@@ -110,10 +132,7 @@ async def _llm_extract(session_summary: str) -> list[ReflectCandidate] | None:
             sev_val = item.get("severity", "medium")
             if sev_val not in valid_severities:
                 sev_val = "medium"
-            # Accept both `domains` (new) and `domain` (legacy from old LLM prompts).
-            domains = item.get("domains") or item.get("domain") or ["general"]
-            if not isinstance(domains, list) or not domains:
-                domains = ["general"]
+            domains = item.get("domains") or ["general"]
             candidates.append(
                 ReflectCandidate(
                     summary=str(item.get("summary", ""))[:280],
