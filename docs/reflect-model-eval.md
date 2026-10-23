@@ -20,6 +20,8 @@ the Anthropic SDK with structured outputs.
 
 ## Results
 
+![Overall score per model configuration](img/reflect-model-scores.webp)
+
 | Config | Expected learnings found | Bad candidates | Overall (1–5) | Cost / call | Median latency |
 |---|---|---|---|---|---|
 | `gpt-4o-mini` (previous) | 10/13 | 10 | 2.67 | $0.0002 | 3.3 s |
@@ -55,6 +57,8 @@ run. Treat the gaps between neighbouring rows as indicative, not precise; the ga
 and the Claude models is large enough to hold up.
 
 ## Store audit, same week
+
+![Audit outcome for 599 knowledge units](img/store-audit-2026-10.webp)
 
 The same week we audited 599 of the store's ~640 non-archived KUs with four blind reviewers. 527 (88%)
 were kept as-is. Of the 72 flagged: 32 duplicates merged (`flag(reason="duplicate")`), 22 rewritten
