@@ -34,10 +34,9 @@ services:
       # (no sync/ module, not defined in Settings), so passing them only injected
       # live tokens into the container for no consumer. Re-add alongside the code
       # when team / SiYuan sync is actually implemented.
-      - CQ_LLM_API_URL=${CQ_LLM_API_URL:-}
       - CQ_LLM_API_KEY=${CQ_LLM_API_KEY:-}
       - TYPESAFE_API_KEY=${TYPESAFE_API_KEY:-}
-      - CQ_LLM_MODEL=${CQ_LLM_MODEL:-gpt-4o-mini}
+      - CQ_LLM_MODEL=${CQ_LLM_MODEL:-claude-sonnet-5-5}
       - FASTMCP_HOME=/data/fastmcp
     volumes:
       - stolperstein-data:/data

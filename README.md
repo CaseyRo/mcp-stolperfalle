@@ -10,7 +10,7 @@ It is for developers who run AI coding agents (Claude Code in particular) across
 
 - Python 3.12 or newer and [uv](https://docs.astral.sh/uv/), or Docker
 - About 1 GB of disk for the CPU build of PyTorch and the local embedding model (`all-MiniLM-L6-v2`), or an embeddings API via `CQ_EMBEDDING_API_URL`
-- Optional: an OpenAI-compatible chat endpoint for `reflect` (without one it falls back to a heuristic extractor)
+- Optional: an Anthropic API key for `reflect` (without one it falls back to a heuristic extractor)
 
 ## Quick start
 
@@ -72,9 +72,8 @@ All server settings are environment variables read by `src/stolperfalle/config.p
 | `MCP_STOLPERFALLE_SIGNING_KEY` | (empty) | Base64 of the 32-byte Ed25519 key; overrides the key file (see below) |
 | `CQ_EMBEDDING_MODEL` | `all-MiniLM-L6-v2` | Local sentence-transformers model |
 | `CQ_EMBEDDING_API_URL` | (empty) | Use an embeddings API instead of the local model |
-| `CQ_LLM_API_URL` | (empty) | OpenAI-compatible endpoint for `reflect`; empty means heuristic fallback |
-| `CQ_LLM_API_KEY` | (empty) | API key for that endpoint |
-| `CQ_LLM_MODEL` | `gpt-4o-mini` | Model name for `reflect` |
+| `CQ_LLM_API_KEY` | (empty) | Anthropic API key for `reflect`; empty means heuristic fallback |
+| `CQ_LLM_MODEL` | `claude-sonnet-5-5` | Claude model for `reflect` |
 | `TRUSTED_ORGS` | `*` | Comma-separated org DIDs visible to `query`; `*` trusts all |
 | `STOLPERFALLE_EMERGENT_DISABLED` | `false` | Turn off emergent-signal detection |
 | `EMERGENT_DETECT_EVERY_N` | `10` | Run detection every Nth query miss (`0` disables) |

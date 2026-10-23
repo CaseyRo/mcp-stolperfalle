@@ -39,10 +39,9 @@ class Settings(BaseSettings):
     cq_embedding_model: str = "all-MiniLM-L6-v2"
     cq_embedding_api_url: str = ""
 
-    # LLM for reflect tool (OpenAI-compatible chat completions endpoint)
-    cq_llm_api_url: str = ""  # e.g. https://api.openai.com/v1 or local endpoint
+    # LLM for reflect tool (Anthropic API key; empty → heuristic fallback)
     cq_llm_api_key: SecretStr = SecretStr("")
-    cq_llm_model: str = "gpt-4o-mini"
+    cq_llm_model: str = "claude-sonnet-5-5"
 
     # Multi-tenant visibility
     trusted_orgs: str = "*"  # comma-separated DIDs; "*" = trust-all
