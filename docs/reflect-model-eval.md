@@ -56,9 +56,15 @@ and the Claude models is large enough to hold up.
 
 ## Store audit, same week
 
-The same week we audited 599 of the store's ~640 non-archived KUs with four blind reviewers: 88% kept
-as-is, 33 duplicates merged (`flag(reason="duplicate")`), 26 rewritten, 10 checked against primary docs
-for factual errors. Patterns worth fixing in the product rather than by hand:
+The same week we audited 599 of the store's ~640 non-archived KUs with four blind reviewers. 527 (88%)
+were kept as-is. Of the 72 flagged: 32 duplicates merged (`flag(reason="duplicate")`), 22 rewritten
+(`propose` the fix, then `flag(reason="superseded")` the original), 9 corrected after checking primary
+docs (one suspect turned out to be right), 3 marked stale. Four rewrites could not be applied: `propose`
+returned the original as a duplicate of its own fix, and there is no tool to edit a KU in place.
+Patterns worth fixing in the product rather than by hand:
+
+- There is no edit path. A KU with a wrong fact can only be replaced by a new one, and a light fix is
+  similar enough to the original that the duplicate check rejects it.
 
 - Close paraphrases of the same trap get proposed weeks apart (12 near-identical zsh-vs-bash KUs), so
   duplicate detection at `propose` time misses rewordings.
