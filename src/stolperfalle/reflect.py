@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import logging
 import re
+from collections import Counter
 from typing import TYPE_CHECKING
 
 from stolperfalle.models import KUKind, KUSeverity, ReflectCandidate
@@ -17,6 +18,25 @@ if TYPE_CHECKING:
     from stolperfalle.store import KnowledgeStore
 
 logger = logging.getLogger(__name__)
+
+
+class LLMConfigError(RuntimeError):
+    """The LLM provider rejected the request itself (key, model id or payload).
+
+    Raised instead of falling back: a heuristic answer would hide a broken
+    deployment, which is exactly how a model swap fails without a sound.
+    """
+
+
+class LLMRefused(RuntimeError):
+    """The model declined the extraction (stop_reason == "refusal")."""
+
+
+# HTTP statuses that mean "fix the config", never "try again later".
+_CONFIG_ERROR_STATUSES = {400, 401, 403, 404}
+
+# ponytail: per-process counts that reset on restart; persist them if fallback history matters.
+fallback_counts: Counter[str] = Counter()
 
 # ── LLM-based extraction ──────────────────────────────────────────────
 
@@ -90,7 +110,12 @@ _CANDIDATES_SCHEMA = {
 
 
 async def _llm_extract(session_summary: str) -> list[ReflectCandidate] | None:
-    """Extract candidates with Claude via the Anthropic Messages API."""
+    """Extract candidates with Claude via the Anthropic Messages API.
+
+    Returns None when no key is configured. Raises LLMConfigError when the
+    provider rejects the request itself, LLMRefused on a refusal, and lets
+    transient errors through for `reflect_with_dedup` to fall back on.
+    """
     from stolperfalle.config import settings
 
     llm_key = settings.cq_llm_api_key.get_secret_value()
@@ -114,48 +139,49 @@ async def _llm_extract(session_summary: str) -> list[ReflectCandidate] | None:
                     "format": {"type": "json_schema", "schema": _CANDIDATES_SCHEMA},
                 },
             )
+    except anthropic.APIStatusError as e:
+        if e.status_code in _CONFIG_ERROR_STATUSES:
+            raise LLMConfigError(
+                f"LLM provider rejected the request (HTTP {e.status_code}, model {settings.cq_llm_model!r})"
+            ) from e
+        raise
 
-        if resp.stop_reason == "refusal":
-            logger.warning("LLM declined reflect extraction: %s", resp.stop_details)
-            return None
-        text = next(b.text for b in resp.content if b.type == "text")
-        raw = json.loads(text)["candidates"]
+    if resp.stop_reason == "refusal":
+        raise LLMRefused(str(resp.stop_details))
+    text = next(b.text for b in resp.content if b.type == "text")
+    raw = json.loads(text)["candidates"]
 
-        # Proposable kinds only — tool-gap-signal is emergent-only.
-        proposable_kinds = {"pitfall", "workaround", "tool-recommendation"}
-        valid_severities = {s.value for s in KUSeverity}
-        candidates = []
-        for item in raw:
-            kind_val = item.get("kind", "pitfall")
-            if kind_val not in proposable_kinds:
-                kind_val = "pitfall"
-            sev_val = item.get("severity", "medium")
-            if sev_val not in valid_severities:
-                sev_val = "medium"
-            domains = item.get("domains") or ["general"]
-            candidates.append(
-                ReflectCandidate(
-                    summary=str(item.get("summary", ""))[:280],
-                    detail=str(item.get("detail", "")),
-                    action=str(item.get("action", "")),
-                    domains=domains,
-                    kind=KUKind(kind_val),
-                    generalizability_score=max(0.0, min(1.0, float(item.get("generalizability_score", 0.5)))),
-                    context_languages=item.get("context_languages") or [],
-                    context_frameworks=item.get("context_frameworks") or [],
-                    context_environment=item.get("context_environment"),
-                    context_pattern=item.get("context_pattern"),
-                    severity=KUSeverity(sev_val),
-                )
+    # Proposable kinds only — tool-gap-signal is emergent-only.
+    proposable_kinds = {"pitfall", "workaround", "tool-recommendation"}
+    valid_severities = {s.value for s in KUSeverity}
+    candidates = []
+    for item in raw:
+        kind_val = item.get("kind", "pitfall")
+        if kind_val not in proposable_kinds:
+            kind_val = "pitfall"
+        sev_val = item.get("severity", "medium")
+        if sev_val not in valid_severities:
+            sev_val = "medium"
+        domains = item.get("domains") or ["general"]
+        candidates.append(
+            ReflectCandidate(
+                summary=str(item.get("summary", ""))[:280],
+                detail=str(item.get("detail", "")),
+                action=str(item.get("action", "")),
+                domains=domains,
+                kind=KUKind(kind_val),
+                generalizability_score=max(0.0, min(1.0, float(item.get("generalizability_score", 0.5)))),
+                context_languages=item.get("context_languages") or [],
+                context_frameworks=item.get("context_frameworks") or [],
+                context_environment=item.get("context_environment"),
+                context_pattern=item.get("context_pattern"),
+                severity=KUSeverity(sev_val),
             )
+        )
 
-        candidates.sort(key=lambda c: c.generalizability_score, reverse=True)
-        logger.info("LLM extracted %d candidates", len(candidates))
-        return candidates
-
-    except Exception:
-        logger.warning("LLM extraction failed, falling back to heuristics", exc_info=True)
-        return None
+    candidates.sort(key=lambda c: c.generalizability_score, reverse=True)
+    logger.info("LLM extracted %d candidates", len(candidates))
+    return candidates
 
 
 # ── Heuristic fallback ─────────────────────────────────────────────────
@@ -361,12 +387,23 @@ async def reflect_with_dedup(
 
     Optionally dedup against existing KUs via embedding similarity.
     """
-    # Try LLM extraction first
-    candidates = await _llm_extract(session_summary)
+    # Try LLM extraction first. Config errors propagate (LLMConfigError);
+    # only transient failures (timeouts, 5xx, refusals, bad output) fall back.
+    fallback_reason: str | None = None
+    try:
+        candidates = await _llm_extract(session_summary)
+    except LLMConfigError:
+        raise
+    except Exception as e:
+        fallback_reason = type(e).__name__
+        logger.error("LLM extraction failed (%s), falling back to heuristics", fallback_reason, exc_info=True)
+        candidates = None
     method = "llm"
 
     # Fall back to heuristics
     if candidates is None:
+        fallback_reason = fallback_reason or "not_configured"
+        fallback_counts[fallback_reason] += 1
         candidates = _heuristic_extract(session_summary)
         method = "heuristic"
 
@@ -415,5 +452,6 @@ async def reflect_with_dedup(
     return {
         "candidates": [c.model_dump(mode="json") for c in candidates],
         "method": method,
+        "fallback_reason": fallback_reason,
         "message": f"Extracted {len(candidates)} candidate(s) via {method}. Call propose on any you want to keep.",
     }

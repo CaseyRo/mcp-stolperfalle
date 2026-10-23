@@ -45,7 +45,7 @@ Stolperfalle extensions (all local-only, all documented in `docs/cq-extensions.m
 
 **Emergent signals (`emergent.py`).** Simple clustering: cosine ≥0.8 on miss embeddings, ≥5 misses across ≥2 distinct hour-buckets → emits a new `tool-gap-signal` KU with `provenance.emergent=true`. 7-day dedupe against recent emergent KUs. Runtime-disableable via `STOLPERFALLE_EMERGENT_DISABLED` or `EMERGENT_DETECT_EVERY_N=0`.
 
-**Reflect (`reflect.py`).** LLM-driven extraction (Claude via the `anthropic` SDK, structured outputs, low effort) with a heuristic NLP fallback when `CQ_LLM_API_KEY` is unset or the call fails. Candidates return flat `context_*` + `severity` so callers pass straight to `propose()`.
+**Reflect (`reflect.py`).** LLM-driven extraction (Claude via the `anthropic` SDK, structured outputs, low effort) with a heuristic NLP fallback when `CQ_LLM_API_KEY` is unset or the call fails transiently (timeout, 5xx, refusal, bad output). Provider 400/401/403/404 is a config error and raises (`LLMConfigError` → `ToolError` / HTTP 502) instead of falling back; fallbacks are counted per reason in `status.reflect_fallbacks`. Candidates return flat `context_*` + `severity` so callers pass straight to `propose()`.
 
 **Auth (`auth.py`).** FastMCP's `MultiAuth`: Cloudflare Access OIDC for browser OAuth clients + static bearer tokens for Claude Code / n8n. Only engages when `TRANSPORT=http`. `hmac.compare_digest` for token comparison. Source of truth for deployment config is `compose.yaml` + `.env.example`.
 
