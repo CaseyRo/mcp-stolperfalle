@@ -8,6 +8,7 @@ import sys
 from pathlib import Path
 
 from fastmcp import FastMCP
+from fastmcp.exceptions import ToolError
 from mcp.types import Icon, ToolAnnotations
 from starlette.responses import JSONResponse
 
@@ -249,10 +250,14 @@ async def hook_reflect(request):
             status_code=400,
         )
 
+    from stolperfalle.reflect import LLMConfigError, reflect_with_dedup
+    from stolperfalle.store import store
+
     try:
-        from stolperfalle.reflect import reflect_with_dedup
-        from stolperfalle.store import store
         result = await reflect_with_dedup(session_summary, store=store)
+    except LLMConfigError as e:
+        logging.getLogger(__name__).error("hook_reflect: %s", e)
+        return JSONResponse({"error": "llm_config", "message": str(e)}, status_code=502)
     except Exception as e:
         logging.getLogger(__name__).exception("hook_reflect failed")
         return JSONResponse(
@@ -452,9 +457,16 @@ async def reflect(session_summary: str) -> ReflectResult:
     and action only. For the full KU (evidence, provenance, context,
     related, owner_org), call query() directly.
     """
-    from stolperfalle.reflect import reflect_with_dedup
+    from stolperfalle.reflect import LLMConfigError, reflect_with_dedup
     from stolperfalle.store import store
-    result = await reflect_with_dedup(session_summary, store=store)
+
+    try:
+        result = await reflect_with_dedup(session_summary, store=store)
+    except LLMConfigError as e:
+        raise ToolError(
+            f"{e}. The server's reflect LLM is misconfigured: check CQ_LLM_API_KEY "
+            "and CQ_LLM_MODEL in its environment. Nothing was extracted."
+        ) from e
     return ReflectResult.model_validate(result)
 
 
@@ -476,8 +488,11 @@ async def status(debug: bool = False) -> StatusReport:
     migrations, by_owner_org breakdown, recent_emergent KU ids, query_misses
     window size. Use for operator troubleshooting, not routine agent calls.
     """
+    from stolperfalle.reflect import fallback_counts
     from stolperfalle.store import store
     result = await store.status(debug=debug)
+    if fallback_counts:
+        result["reflect_fallbacks"] = dict(fallback_counts)
     return StatusReport.model_validate(result)
 
 

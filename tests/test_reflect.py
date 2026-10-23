@@ -249,14 +249,70 @@ class TestLLMExtraction:
         assert kwargs["output_config"]["format"]["type"] == "json_schema"
         assert "temperature" not in kwargs  # rejected by current models
 
+    @staticmethod
+    def _api_error(cls, status: int):
+        import httpx2
+
+        request = httpx2.Request("POST", "https://api.anthropic.com/v1/messages")
+        return cls("boom", response=httpx2.Response(status, request=request), body=None)
+
     @pytest.mark.asyncio
-    async def test_llm_refusal_falls_back(self, monkeypatch):
+    async def test_llm_refusal_falls_back_with_reason(self, monkeypatch):
         self._configure(monkeypatch)
         response = SimpleNamespace(stop_reason="refusal", stop_details={"category": None}, content=[])
         patcher, _ = self._mock_client(response)
         with patcher:
-            from stolperfalle.reflect import _llm_extract
-            assert await _llm_extract("test session") is None
+            result = await reflect_with_dedup("1. **Docker bridge DNS fails**: no DNS between containers on the default bridge.", store=None)
+        assert result["method"] == "heuristic"
+        assert result["fallback_reason"] == "LLMRefused"
+
+    @pytest.mark.asyncio
+    async def test_llm_config_error_is_raised_not_hidden(self, monkeypatch):
+        # A wrong key or model id must fail loudly; a heuristic answer would
+        # hide the broken deployment (the gpt-6-luna `temperature` 400).
+        import anthropic
+
+        from stolperfalle.reflect import LLMConfigError
+
+        self._configure(monkeypatch)
+        patcher, client = self._mock_client(None)
+        client.messages.create.side_effect = self._api_error(anthropic.AuthenticationError, 401)
+        with patcher, pytest.raises(LLMConfigError, match="HTTP 401"):
+            await reflect_with_dedup("some session", store=None)
+
+    @pytest.mark.asyncio
+    async def test_llm_server_error_falls_back_and_is_counted(self, monkeypatch):
+        import anthropic
+
+        from stolperfalle.reflect import fallback_counts
+
+        self._configure(monkeypatch)
+        monkeypatch.setattr("stolperfalle.reflect.fallback_counts", fallback_counts.__class__())
+        from stolperfalle import reflect as reflect_mod
+
+        patcher, client = self._mock_client(None)
+        client.messages.create.side_effect = self._api_error(anthropic.InternalServerError, 500)
+        with patcher:
+            result = await reflect_with_dedup("1. **Webhook payload is notification-only**: provider sends IDs, not records. Poorly documented.", store=None)
+        assert result["method"] == "heuristic"
+        assert result["fallback_reason"] == "InternalServerError"
+        assert reflect_mod.fallback_counts["InternalServerError"] == 1
+
+    @pytest.mark.asyncio
+    async def test_reflect_tool_surfaces_config_error(self, monkeypatch):
+        import anthropic
+        from fastmcp import Client
+        from fastmcp.exceptions import ToolError
+
+        from stolperfalle.server import mcp
+
+        self._configure(monkeypatch)
+        patcher, client = self._mock_client(None)
+        client.messages.create.side_effect = self._api_error(anthropic.NotFoundError, 404)
+        with patcher:
+            async with Client(mcp) as mcp_client:
+                with pytest.raises(ToolError, match="CQ_LLM_MODEL"):
+                    await mcp_client.call_tool("reflect", {"session_summary": "anything"})
 
 
 # ── Integration: reflect_with_dedup ────────────────────────────────────

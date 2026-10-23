@@ -271,6 +271,8 @@ class StatusReport(StoreStatus, _DropNoneModel):
     by_owner_org: dict[str, int] | None = None
     recent_emergent: list[str] | None = None  # KU ids
     query_misses_window: int | None = None
+    # Heuristic fallbacks since process start, by reason; absent until the first one.
+    reflect_fallbacks: dict[str, int] | None = None
 
 
 class QueryResult(BaseModel):
@@ -294,6 +296,7 @@ class ReflectResult(_DropNoneModel):
 
     candidates: list[ReflectCandidate] = Field(default_factory=list)
     method: str | None = None  # "llm" | "heuristic"; absent when no candidates
+    fallback_reason: str | None = None  # why "heuristic" ran: "not_configured" or the error type
     message: str | None = None
 
 
