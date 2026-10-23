@@ -4,6 +4,9 @@ Experiential knowledge capture and recall MCP server for AI coding agents. A con
 
 > **Renamed 2026-07-11 (was `mcp-stolperstein`).** *Stolpersteine* are [Gunter Demnig's brass Holocaust memorial stones](https://en.wikipedia.org/wiki/Stolperstein) set into German pavements; using that name for a casual dev tool risked trivializing the memorial, so the project was renamed to **Stolperfalle** (an ordinary German word for a trip hazard — same *stolpern* "stumble" root, none of the weight). Rationale and rollout: [`openspec/changes/archive/2026-07-11-rename-product-name`](openspec/changes/archive/2026-07-11-rename-product-name/proposal.md). The old GitHub URL auto-redirects. The rename also extends to the wire-protocol extension namespace: fields now ride the upstream `extensions` slot under `stolperfalle:*` keys (the previous `stolperstein:*` namespace was our own emitted value, not part of cq — see [`docs/cq-extensions.md`](docs/cq-extensions.md)).
 
+> **Deciding whether to use it?** [OVERVIEW.md](OVERVIEW.md) is the one-page summary: what data leaves
+> your server, how installs are isolated, what it costs, the known gaps, and how to leave.
+
 It is for developers who run AI coding agents (Claude Code in particular) across many repositories and want the lessons from one session, such as a pitfall, a workaround or a tool that fits, to surface automatically in the next one. It ships an MCP server plus a Claude Code plugin whose hooks query the server when a real error shows up.
 
 ## Requirements
@@ -100,7 +103,7 @@ Stolperfalle is not a fork — it's an independent, cq-compatible local node tha
 
 **Current standing on individual fields:** `severity`, `contributing_orgs`, and `kind` were declined for core promotion (upstream's call: importance should emerge from usage, not self-declaration) — they stay local-only, riding the slot. `context.environment` and `proposer_did` attribution are deferred, open threads. `status`, `staleness_policy`, `related[]`, `owner_org`, and `emergent` were never proposed for core — they're Stolperfalle-specific by design.
 
-**Open loop:** an adopter comment for #286, announcing production slot emission, is drafted (`openspec/changes/archive/2026-07-07-adopt-cq-extensions-slot/upstream-comment-draft.md`) but not yet posted — held for review.
+**Adopter reports on #286:** production slot emission was announced in July 2026; findings from the October 2026 store audit (confidence never moves off its default, declared severity skews high, duplicates are paraphrases) were [posted in October](https://github.com/mozilla-ai/cq/discussions/286#discussioncomment-19144479).
 
 ## Migration workflow
 
