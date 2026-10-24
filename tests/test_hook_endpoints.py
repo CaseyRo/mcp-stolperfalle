@@ -237,6 +237,44 @@ class TestHookQueryRegression:
         assert "degraded" not in body
 
 
+# --- usage telemetry ------------------------------------------------------
+
+
+def _usage_lines(capsys) -> list[dict]:
+    err = capsys.readouterr().err
+    return [json.loads(line) for line in err.splitlines() if line.startswith('{"mcp_usage"')]
+
+
+class TestHookUsageTelemetry:
+    """Hooks are custom routes, invisible to UsageMiddleware; they emit their own line."""
+
+    @pytest.mark.asyncio
+    async def test_valid_query_emits_ok_line(self, http_settings, monkeypatch, capsys):
+        async def fake_query(*, text, domain, confidence_min, limit):
+            return {"results": [], "count": 0}
+
+        import stolperfalle.store as store_mod
+        monkeypatch.setattr(store_mod.store, "query", fake_query)
+
+        from stolperfalle.server import hook_query
+        resp = await hook_query(_MockRequest(headers=_auth_headers(), body={"text": "x"}))
+        assert resp.status_code == 200
+        [line] = _usage_lines(capsys)
+        assert line["server"] == "stolperfalle"
+        assert line["tool"] == "hook/query"
+        assert line["outcome"] == "ok"
+        assert line["protocol"] is None
+        assert isinstance(line["duration_ms"], int)
+
+    @pytest.mark.asyncio
+    async def test_unauthorized_reflect_emits_error_line(self, http_settings, capsys):
+        from stolperfalle.server import hook_reflect
+        resp = await hook_reflect(_MockRequest(headers={"authorization": "Bearer wrong"}))
+        assert resp.status_code == 401
+        [line] = _usage_lines(capsys)
+        assert (line["tool"], line["outcome"]) == ("hook/reflect", "error")
+
+
 # --- transport guard ------------------------------------------------------
 
 

@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import argparse
+import functools
 import logging
 import sys
+import time
 from pathlib import Path
 
 from fastmcp import FastMCP
@@ -20,7 +22,7 @@ from stolperfalle.models import (
     ReflectResult,
     StatusReport,
 )
-from stolperfalle.usage import UsageMiddleware
+from stolperfalle.usage import UsageMiddleware, emit
 
 SERVER_INSTRUCTIONS = """\
 Stolperfalle is an experiential knowledge base for AI coding agents. It stores
@@ -104,7 +106,8 @@ mcp = FastMCP(
     ],
 )
 
-mcp.add_middleware(UsageMiddleware("stolperfalle"))
+_usage = UsageMiddleware("stolperfalle")
+mcp.add_middleware(_usage)
 
 @mcp.custom_route("/health", methods=["GET"])
 async def health(_request):
@@ -172,7 +175,28 @@ async def _hook_authorize(request):
     return payload, None
 
 
+def _hook_usage(tool):
+    """One `mcp_usage` line per hook request; custom routes bypass UsageMiddleware.
+
+    Outcome is `ok` for a <400 response, `error` otherwise (incl. 401s and raises).
+    """
+    def wrap(handler):
+        @functools.wraps(handler)
+        async def wrapper(request):
+            start = time.perf_counter()
+            outcome = "error"
+            try:
+                response = await handler(request)
+                outcome = "ok" if response.status_code < 400 else "error"
+                return response
+            finally:
+                emit(_usage.server, tool, round((time.perf_counter() - start) * 1000), outcome)
+        return wrapper
+    return wrap
+
+
 @mcp.custom_route("/hook/query", methods=["POST"])
+@_hook_usage("hook/query")
 async def hook_query(request):
     """Stdlib-friendly REST endpoint for Claude Code hook handlers.
 
@@ -227,6 +251,7 @@ async def hook_query(request):
 
 
 @mcp.custom_route("/hook/reflect", methods=["POST"])
+@_hook_usage("hook/reflect")
 async def hook_reflect(request):
     """REST wrapper around `reflect()` for zero-dep hook subprocesses.
 
