@@ -8,7 +8,7 @@ COPY src/ ./src/
 # uv.lock pins linux torch to the CPU wheel index via tool.uv.sources, so
 # the extra-index-url is required for pip to find the +cpu build; it saves
 # ~5 GB of nvidia-cuda-* packages a CPU-only host can't use.
-RUN pip install --no-cache-dir uv && \
+RUN pip install --no-cache-dir uv==0.13.5 && \
     uv export --frozen --no-dev --no-emit-project -o /tmp/requirements.txt && \
     pip install --no-cache-dir --require-hashes --extra-index-url https://download.pytorch.org/whl/cpu \
         -r /tmp/requirements.txt && \
