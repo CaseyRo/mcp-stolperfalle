@@ -2,6 +2,7 @@ services:
   mcp-stolperfalle:
     build: .
     restart: unless-stopped
+    init: true
     # Runtime hardening: non-root already (USER mcp in the image); block
     # privilege escalation and drop all Linux caps (a non-root Python HTTP
     # server on :8716 needs none).
