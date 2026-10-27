@@ -13,7 +13,7 @@ from pathlib import Path
 
 from _client import MCPUnreachable, call_query
 from _debug import trace
-from _inject import wrap_injection
+from _inject import _strip_tags, wrap_injection
 from _rate_limit import should_inject
 
 
@@ -80,7 +80,10 @@ async def query_and_emit(
         return 0
 
     trace(hook_event, "injected", ku_id=top.get("id", ""))
+    summary = _strip_tags((top.get("insight") or {}).get("summary") or top.get("summary") or "")
     print(json.dumps({
+        # Shown to the user in the transcript; additionalContext only reaches the model.
+        "systemMessage": f'stolperfalle: recalled {top.get("id", "?")} "{" ".join(summary.split())}"',
         "hookSpecificOutput": {
             "hookEventName": hook_event,
             "additionalContext": wrap_injection(top, source=source),

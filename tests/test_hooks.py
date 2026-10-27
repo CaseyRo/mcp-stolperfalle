@@ -458,6 +458,7 @@ class TestEntryScriptsIntegration:
         assert await mod._run() == 0
         out = capsys.readouterr().out
         assert "hookSpecificOutput" in out
+        assert json.loads(out)["systemMessage"].startswith("stolperfalle: recalled ku_")
         assert "Note from Stolperfalle" in out
         assert "ku_" + "a" * 32 in out
         # Sanitization didn't corrupt the real content
