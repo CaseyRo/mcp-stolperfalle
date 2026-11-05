@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 `mcp-stolperfalle` — a FastMCP server that captures and recalls experiential knowledge ("Knowledge Units" / KUs) for AI coding agents. Internal model is a superset of Mozilla AI's upstream `cq` schema; strict-mode serializer (`to_cq_json_strict()`) emits upstream-valid payloads, `to_cq_json_rich()` emits the full internal shape with Stolperfalle extensions. Upstream discussion of the extensions we propose: [mozilla-ai/cq#286](https://github.com/mozilla-ai/cq/discussions/286). Registry of extensions: `docs/cq-extensions.md`.
 
-This project is Phase 1 of the **machine-readable org layer** we're building at [CDiT](https://cdit-works.de). Multi-tenant primitives (`owner_org`, `TRUSTED_ORGS` visibility) and emergent-signal detection are foundations, not the whole product.
+Stolperfalle is an independent open-source project that Casey builds and maintains. Its longer aim is a **machine-readable org layer**: agents across teams and organisations sharing what they learn. Multi-tenant primitives (`owner_org`, `TRUSTED_ORGS` visibility) and emergent-signal detection are foundations, not the whole product.
 
 ## Commands
 
