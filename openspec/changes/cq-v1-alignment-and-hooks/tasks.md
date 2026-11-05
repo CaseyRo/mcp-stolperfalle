@@ -96,9 +96,8 @@
 
 - [x] 11.0.1 Review `upstream-issue-draft.md` for tone and accuracy.
 - [x] 11.0.2 File the discussion on `mozilla-ai/cq` — filed as Ideas category at https://github.com/mozilla-ai/cq/discussions/286.
-- [x] 11.0.3 Link discussion URL into CDI-999 Linear ticket.
+- [x] 11.0.3 Link discussion URL into the tracking ticket.
 - [ ] 11.0.4 Capture discussion URL in `docs/cq-extensions.md` when that file is created (task 4.6).
-- [ ] 11.0.5 Link discussion URL into cdit-works.de positioning draft when it goes live.
 
 ## 12. Verification
 

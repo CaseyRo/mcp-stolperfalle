@@ -3,14 +3,14 @@
 Stolperstein v0.1 shipped 2026-04-09 as a CQ-compatible local node. Two strategic forces now reshape its ceiling:
 
 1. Upstream `mozilla-ai/cq` is iterating quickly (last push 2026-04-16): new `context`, `evidence.severity`, DID-based `provenance`, `tool-gap-signal` emergent-only. Drift breaks the interop we sell.
-2. Casey reframed the project from "personal knowledge base" to "atomic data layer for the machine-readable org layer that replaces status meetings" (see `proposal.md`, CDI-999). This change is now Phase 1 of that larger ambition, not a personal-tool polish pass.
+2. Casey reframed the project from "personal knowledge base" to "atomic data layer for the machine-readable org layer that replaces status meetings" (see `proposal.md`). This change is now Phase 1 of that larger ambition, not a personal-tool polish pass.
 
 Two operational constraints force us to get the foundation right in one change rather than iteratively:
 
 - Existing KUs in the production `stolperstein-data` Docker volume must survive any schema migration intact. `store._init_db` today is CREATE-IF-NOT-EXISTS-only — no versioning, no snapshot, no migrations. The first breaking migration is now.
 - A four-agent review (ux-auditor, mcp-tool-reviewer, security-auditor, sharp-business-strategist) surfaced issues that are cheap to fix in the same change and catastrophic to ship past. We fold them in rather than queue a follow-up cleanup.
 
-Stakeholders: Casey (solo operator + consulting owner), future Mittelstand consulting prospects who will see this as the reference implementation of the positioning, downstream Siyuan sync, future CQ team/global tier consumers, and future org-scale deployments where KUs cross department boundaries.
+Stakeholders: Casey (solo operator and maintainer), downstream Siyuan sync, future CQ team/global tier consumers, and future org-scale deployments where KUs cross department boundaries.
 
 ## Goals / Non-Goals
 
@@ -33,7 +33,7 @@ Stakeholders: Casey (solo operator + consulting owner), future Mittelstand consu
 - Full W3C DID document resolution. `did:key:z...` is an opaque identifier; no DID registry, no resolver.
 - Backfilling `context_*` fields by re-inferring from existing summaries. Migration sets them `NULL`; future `confirm()` or a cleanup tool fills them on touch.
 - Reworking Siyuan / CQ-team sync protocols. Only payload shape changes; HTTP semantics unchanged.
-- Billing, tenancy provisioning, and UX for "onboarding an org" — the wedge product the positioning implies is a consulting engagement, not a SaaS, so these don't exist yet.
+- Billing, tenancy provisioning, and UX for "onboarding an org" — out of scope for an open-source node, so these don't exist yet.
 
 ## Decisions
 
@@ -165,7 +165,7 @@ Add a `TRUSTED_ORGS` env var (comma-separated DIDs; default: `*` meaning trust-a
 - **[CQ upstream drifts again before we archive]** → pinned schema fixture + scripted sync makes next realignment mechanical.
 - **[Action-field sanitization strips legitimate HTML examples from KUs]** → accepted: KUs are agent-to-agent communication; HTML examples belong in `detail`, not `action`. Document in SKILL.md that `action` must be plain imperative text.
 - **[Users bypass hook rate-limit via manual `query()` calls and flood]** → accepted: manual is intentional, rate limit is only for auto-fired handlers.
-- **[CDiT positioning (CDI-999) doesn't validate in 30 days and this work becomes tech orphaned]** → accepted risk: the technical foundation work (CQ v1, migrations, hooks, security) is load-bearing regardless of positioning outcome.
+- **[The org-layer thesis doesn't validate and this work becomes tech orphaned]** → accepted risk: the technical foundation work (CQ v1, migrations, hooks, security) is load-bearing regardless of positioning outcome.
 
 ## Migration Plan
 
@@ -190,4 +190,3 @@ Add a `TRUSTED_ORGS` env var (comma-separated DIDs; default: `*` meaning trust-a
 - **`graduation_history` on team-sync import**: when we ingest a team KU, do we append an entry reflecting the import? Current draft: no — imports are passive and the upstream history is preserved as-is.
 - **Hook handler packaging**: ship Python handlers (requires `python3` on PATH) or pre-built shell scripts calling `curl`? Current draft: Python, `#!/usr/bin/env python3`, stdlib-only imports, documented PATH requirement.
 - **Phase 2 permissions model**: ACL-per-org, role-based, capability-based? Deferred to the follow-up change; this change only lays the `owner_org` field + `TRUSTED_ORGS` default-trust so Phase 2 has a column to attach to.
-- **CDiT consulting engagement shape** (tracked in CDI-999): 6-week vs 12-week, fixed-price vs T&M, first-client profile. Not a technical design question for this change, but the answer shapes what "good" looks like for the Phase 2 scope.

@@ -7,7 +7,7 @@ Stolperstein began as a "CQ-compatible local node" — a single-operator knowled
 
 This reframes the work. We're not catching up to CQ v1 — we're **conforming** to its strict, small base **and deliberately extending it** with the concepts Stolperstein needs (severity, rich provenance, org boundaries, a state machine, emergent-signal detection, a kind enum). Those extensions are what makes Stolperstein a working implementation of the larger thesis — the machine-readable org layer that lets agent-to-agent awareness replace the middle-management-as-compression-layer that status meetings, reports, and dashboards exist to compensate for.
 
-The strategic bet is the same as before — Stolperstein as the atomic data layer for the machine-readable org layer (tracked in CDI-999). What changes is the narrative: we are not a fork; we are a conforming-plus-extending reference implementation. Extensions we find useful get proposed upstream so the protocol grows. An issue with the first batch of proposed extensions has been drafted at `openspec/changes/cq-v1-alignment-and-hooks/upstream-issue-draft.md` and will be filed against `mozilla-ai/cq` as part of this change.
+The strategic bet is the same as before — Stolperstein as the atomic data layer for the machine-readable org layer. What changes is the narrative: we are not a fork; we are a conforming-plus-extending reference implementation. Extensions we find useful get proposed upstream so the protocol grows. An issue with the first batch of proposed extensions has been drafted at `openspec/changes/cq-v1-alignment-and-hooks/upstream-issue-draft.md` and will be filed against `mozilla-ai/cq` as part of this change.
 
 Three operational reasons still force all of this into one change:
 
@@ -106,7 +106,7 @@ Bearer-token hygiene (H2 fix): HTTP handler wraps requests in `try/except` that 
 
 ### 10 — Upstream engagement (new, non-code)
 
-File `upstream-issue-draft.md` (already drafted in this change folder) on `mozilla-ai/cq` proposing the extensions we're shipping. Tracked as part of the change so the relationship between our code and their protocol is visible. Link lands in cdit-works.de positioning page once the issue is live.
+File `upstream-issue-draft.md` (already drafted in this change folder) on `mozilla-ai/cq` proposing the extensions we're shipping. Tracked as part of the change so the relationship between our code and their protocol is visible.
 
 ## Capabilities
 
@@ -136,5 +136,5 @@ File `upstream-issue-draft.md` (already drafted in this change folder) on `mozil
 - **Dependencies**: `cryptography` (Ed25519, already transitively present), `jsonschema` (dev group).
 - **Deployment**: Redeploy triggers migration chain; operator checklist adds volume snapshot, post-deploy verify, `prune-backups` cleanup.
 - **Downstream**: Siyuan sync + CQ team sync re-serialize; Siyuan gets the `CQ_SIYUAN_SCHEMA_VERSION=0` escape hatch until its follow-up change lands. CQ team sync uses `to_cq_json_strict()`.
-- **Upstream**: `upstream-issue-draft.md` filed on `mozilla-ai/cq` proposing extensions for adoption. Linked from cdit-works.de positioning.
-- **Strategic**: This change is explicitly **Phase 1 of the machine-readable org layer** (CDI-999). Phase 2 (enforceable org boundaries, selective graduation UX, richer emergent aggregation) will land as a follow-up once Phase 1 proves the shape.
+- **Upstream**: `upstream-issue-draft.md` filed on `mozilla-ai/cq` proposing extensions for adoption.
+- **Strategic**: This change is explicitly **Phase 1 of the machine-readable org layer**. Phase 2 (enforceable org boundaries, selective graduation UX, richer emergent aggregation) will land as a follow-up once Phase 1 proves the shape.

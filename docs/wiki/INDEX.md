@@ -7,7 +7,7 @@ Total topics: 5 | Total sources: 32
 
 | Topic | Also Known As | Sources | Last Updated | Status |
 |-------|--------------|---------|-------------|--------|
-| [[topics/project-overview]] | thesis, positioning, runbook, CDiT Phase 1, machine-readable org layer, USING | 9 | 2026-07-07 | active |
+| [[topics/project-overview]] | thesis, positioning, runbook, machine-readable org layer, USING | 9 | 2026-07-07 | active |
 | [[topics/cq-interop-and-schema]] | cq, mozilla-ai/cq, strict/rich, to_cq_json, extensions slot, #453, migrations | 11 | 2026-07-07 | active |
 | [[topics/knowledge-lifecycle]] | KU, propose/confirm/flag, query, hybrid search, FTS5, sqlite-vec, confidence, decay | 6 | 2026-07-07 | active |
 | [[topics/org-layer-foundations]] | owner_org, TRUSTED_ORGS, multi-tenant, emergent signals, tool-gap-signal, query_misses | 2 | 2026-07-07 | active |

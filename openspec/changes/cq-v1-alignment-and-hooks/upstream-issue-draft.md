@@ -38,8 +38,8 @@ This would let downstream implementations iterate without forking the schema. Ha
 
 ### What's in it for cq
 
-Stolperstein is part of a positioning thrust we're building at [CDiT](https://cdit-works.de) around "the machine-readable org layer" — the shorthand being: *if every department's agents share state the way cq lets them, half of status meetings compress to nothing.* Adoption of cq in the KMU / Mittelstand segment is ~zero right now; a working reference implementation and real deployment experience feeding back to the protocol is one concrete path to getting there.
+Stolperstein is part of a broader idea I'm working on, "the machine-readable org layer" — the shorthand being: *if every department's agents share state the way cq lets them, half of status meetings compress to nothing.* Adoption of cq in the KMU / Mittelstand segment is ~zero right now; a working reference implementation and real deployment experience feeding back to the protocol is one concrete path to getting there.
 
 I'll open separate issues for any of the above that want discussion on their own thread. Let me know which would be welcome as PRs and which are "interesting but out of scope for now."
 
-— Casey, CDiT
+— Casey
