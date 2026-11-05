@@ -1,8 +1,10 @@
 # mcp-stolperfalle
 
-Experiential knowledge capture and recall MCP server for AI coding agents. A conforming-plus-extending implementation of Mozilla AI's [cq](https://github.com/mozilla-ai/cq) — Phase 1 of the machine-readable org layer we're building at [CDiT](https://cdit-works.de).
+Experiential knowledge capture and recall for AI coding agents: an MCP server plus a Claude Code plugin, compatible with Mozilla AI's [cq](https://github.com/mozilla-ai/cq) schema and extending it.
 
-> **Renamed 2026-07-11 (was `mcp-stolperstein`).** *Stolpersteine* are [Gunter Demnig's brass Holocaust memorial stones](https://en.wikipedia.org/wiki/Stolperstein) set into German pavements; using that name for a casual dev tool risked trivializing the memorial, so the project was renamed to **Stolperfalle** (an ordinary German word for a trip hazard — same *stolpern* "stumble" root, none of the weight). Rationale and rollout: [`openspec/changes/archive/2026-07-11-rename-product-name`](openspec/changes/archive/2026-07-11-rename-product-name/proposal.md). The old GitHub URL auto-redirects. The rename also extends to the wire-protocol extension namespace: fields now ride the upstream `extensions` slot under `stolperfalle:*` keys (the previous `stolperstein:*` namespace was our own emitted value, not part of cq — see [`docs/cq-extensions.md`](docs/cq-extensions.md)).
+Every coding agent learns alone today. The same pitfalls cost time in every project, and the lessons an agent does write down can carry client names, hostnames and secrets. Stolperfalle stores each lesson as a small Knowledge Unit and brings it back when an agent hits a matching error. It runs on your own infrastructure: storage and search stay on your server, and only the optional `reflect` step calls an LLM API. The roadmap is about sharing lessons between organisations without sharing their data: redaction before anything is stored, real deletion with tombstones, and a signed, opt-in exchange between independent installations.
+
+**Kurz auf Deutsch:** Stolperfalle ist ein Gedächtnis für KI-Coding-Agenten, das selbst betrieben wird. Es speichert gelernte Lektionen und spielt sie ein, wenn ein Agent auf einen passenden Fehler trifft. Ziel ist, dass Agenten verschiedener Organisationen voneinander lernen, ohne Firmenkontext und ohne dass Kundendaten die Installation verlassen.
 
 > **Deciding whether to use it?** [OVERVIEW.md](OVERVIEW.md) is the one-page summary: what data leaves
 > your server, how installs are isolated, what it costs, the known gaps, and how to leave.
@@ -164,6 +166,10 @@ Tests force `TRANSPORT=stdio`, use a fixed test signing key and no-op embeddings
 ## Releases
 
 Releases are tag-only: a release is a pushed `v*` tag and there are no version-bump commits. This repo has no release workflow and no tags yet; production tracks `main` and rebuilds from source on each merge.
+
+## Name
+
+Renamed on 2026-07-11 (was `mcp-stolperstein`). *Stolpersteine* are [Gunter Demnig's brass Holocaust memorial stones](https://en.wikipedia.org/wiki/Stolperstein) set into German pavements; using that name for a casual dev tool risked trivializing the memorial, so the project was renamed to **Stolperfalle** (an ordinary German word for a trip hazard — same *stolpern* "stumble" root, none of the weight). Rationale and rollout: [`openspec/changes/archive/2026-07-11-rename-product-name`](openspec/changes/archive/2026-07-11-rename-product-name/proposal.md). The old GitHub URL auto-redirects. The rename also extends to the wire-protocol extension namespace: fields now ride the upstream `extensions` slot under `stolperfalle:*` keys (the previous `stolperstein:*` namespace was our own emitted value, not part of cq — see [`docs/cq-extensions.md`](docs/cq-extensions.md)).
 
 ## Support
 

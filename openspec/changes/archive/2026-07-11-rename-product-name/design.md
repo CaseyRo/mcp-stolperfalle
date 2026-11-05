@@ -1,8 +1,8 @@
 ## Context
 
 Production today: GitHub repo `CaseyRo/mcp-stolperstein`, one Komodo stack
-(`git-mcp-stolperstein-nebula`) on `nebula-1`, fronted by a co-located
-Cloudflare tunnel at `mcp-stolperstein.cdit-dev.de`, live KU data in the
+(`git-mcp-stolperstein-<host>`) on `<host>`, fronted by a co-located
+Cloudflare tunnel at `mcp-stolperstein.<domain>`, live KU data in the
 `stolperstein-data` Docker volume, the Ed25519 signing key in
 `stolperstein-key`, a Claude Code plugin at `plugin/stolperstein/`
 registered in a marketplace, and MCP tools surfaced to agents as
