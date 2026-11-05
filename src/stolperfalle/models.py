@@ -311,6 +311,9 @@ class ReflectCandidate(BaseModel):
     domains: list[str]
     kind: KUKind
     generalizability_score: float = Field(ge=0.0, le=1.0)
+    # Extractor's read: failure observed AND fix seen to work in the session. Not a propose() arg;
+    # the reflect skill proposes only these (CDI-2090). Heuristic fallback cannot tell: False.
+    verified_fix: bool = False
     context_languages: list[str] = Field(default_factory=list)
     context_frameworks: list[str] = Field(default_factory=list)
     context_environment: str | None = None

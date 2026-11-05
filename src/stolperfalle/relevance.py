@@ -7,7 +7,11 @@ apply; the gate kept 3/30).
 
 from __future__ import annotations
 
+import json
 import logging
+import time
+from datetime import UTC, datetime
+from pathlib import Path
 
 import httpx
 
@@ -22,6 +26,7 @@ TIMEOUT_S = 0.9  # hook client gives /hook/query 1.5 s in total; search takes â‰
 # ponytail: untuned (the eval had no labelled truth); re-run the lab eval after a week of live traffic.
 ACT = 0.80
 CONFIRM = 0.50
+LOG_FILE = "relevance-gate.jsonl"  # next to the DB, on the data volume
 
 
 def _question(ku: dict) -> dict:
@@ -53,6 +58,7 @@ async def gate(text: str, candidates: list[dict]) -> dict | None:
         "state": {"error": text[-4096:]},
         "questions": {f"c{i}": _question(ku) for i, ku in enumerate(candidates)},
     }
+    start = time.perf_counter()
     try:
         async with httpx.AsyncClient(timeout=TIMEOUT_S) as client:
             r = await client.post(URL, json=body, headers={"Authorization": f"Bearer {key}"})
@@ -63,9 +69,41 @@ async def gate(text: str, candidates: list[dict]) -> dict | None:
         logger.warning("relevance gate degraded: %s", type(e).__name__)
         return None
 
+    model = data.get("model", MODEL)
+    _record(candidates, probs, model, round((time.perf_counter() - start) * 1000))
     scored = sorted(zip(probs, candidates, strict=True), key=lambda pc: pc[0], reverse=True)
     return {
         "results": [ku for p, ku in scored if p >= ACT],
         "hints": [ku for p, ku in scored if CONFIRM <= p < ACT],
-        "model": data.get("model", MODEL),
+        "model": model,
     }
+
+
+def _band(p: float) -> str:
+    return "act" if p >= ACT else "confirm" if p >= CONFIRM else "drop"
+
+
+def _record(candidates: list[dict], probs: list[float], model: str, latency_ms: int) -> None:
+    """One JSON line per gate call, for tuning ACT/CONFIRM from live traffic (CDI-2085).
+
+    KU ids, probabilities and bands only: never the error text or the key. Appended next to the
+    DB on the data volume, so it survives container recreation (docker logs do not).
+    """
+    line = json.dumps({
+        "relevance_gate": 1,
+        "ts": datetime.now(UTC).isoformat(timespec="seconds"),
+        "model": model,
+        "latency_ms": latency_ms,
+        "act": ACT,
+        "confirm": CONFIRM,
+        "kus": [
+            {"id": ku.get("id"), "p": round(p, 4), "band": _band(p)}
+            for ku, p in zip(candidates, probs, strict=True)
+        ],
+    })
+    logger.info("%s", line)
+    try:
+        with (Path(settings.cq_local_db_path).parent / LOG_FILE).open("a") as f:
+            f.write(line + "\n")
+    except OSError as e:  # logging must never break the hook path
+        logger.warning("relevance log not written: %s", type(e).__name__)
