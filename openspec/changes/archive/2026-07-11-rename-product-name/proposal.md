@@ -20,7 +20,7 @@ already a first-class value in the KU schema.
   `stolperfalle`: GitHub repo, Python package (`mcp_stolperstein` →
   `mcp_stolperfalle`), CLI command, Docker volume names, Komodo stack name,
   Cloudflare Access catalog entry + DNS subdomain
-  (`mcp-stolperstein.cdit-dev.de` → `mcp-stolperfalle.cdit-dev.de`), the
+  (`mcp-stolperstein.<domain>` → `mcp-stolperfalle.<domain>`), the
   Claude Code plugin directory/marketplace entry (`plugin/stolperstein/` →
   `plugin/stolperfalle/`), and the MCP tool name prefix surfaced to agents
   (`stolperstein_query` etc. → `stolperfalle_query` etc.).
