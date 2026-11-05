@@ -19,16 +19,13 @@ Run this at the end of a substantive coding or debugging session to capture reus
    reflect(session_summary="<your summary>")
    ```
 
-   Each candidate comes back pre-filled with `summary`, `detail`, `action`, `domains`, `kind`, and best-effort `context_languages` / `context_frameworks` / `context_environment` / `context_pattern` / `severity`. You can pass them straight through to `propose()` without re-reading the docs.
+   Each candidate comes back pre-filled with `summary`, `detail`, `action`, `domains`, `kind`, `context_*`, `severity`, and `verified_fix` (the extractor's read of whether the failure was observed AND a fix was seen to work in this session). You get one candidate per distinct finding; reflect does not cap them.
 
-3. **Review candidates** — for each one:
-   - Is it generalizable? (Would it help a DIFFERENT agent on a DIFFERENT project?)
-   - Is the `summary` clear and the `action` prescriptive?
-   - Does `severity` feel right? (`critical` is for things that break production if ignored.)
-   - If yes: propose it.
-   - If no: skip.
+3. **Pick at most 3 to propose.** A candidate qualifies only if it is backed by an observed failure *and* a verified fix in this session. Use `verified_fix` as a first filter, then check it against what you actually saw: you were there, the extractor only read your summary. Of the qualifying ones, keep the 3 most generalizable (would it help a DIFFERENT agent on a DIFFERENT project?). Everything else is **listed, not proposed**.
 
-4. **Propose the keepers**:
+   Before proposing, check: is the `action` a concrete command, setting or check (not "be careful with X")? Are the exact names, flags and error strings still in it? Does `severity` feel right? (`critical` is for things that break production if ignored.)
+
+4. **Propose the keepers** (at most 3):
    ```
    propose(
      summary=candidate["summary"],
@@ -44,7 +41,9 @@ Run this at the end of a substantive coding or debugging session to capture reus
    )
    ```
 
-5. **Report** — tell the user how many KUs were proposed and their IDs.
+   If a propose call comes back as an HTML "Sorry, you have been blocked" page, a WAF on the connector path matched shell commands or SQL in the text. Retry the same call with `summary`, `detail` and `action` each base64-encoded (UTF-8) and `encoding="base64"`. Do not reword the content to get past the filter.
+
+5. **Report** — tell the user the IDs you proposed, and list the candidates you did not propose with one line each (why: no verified fix, over the cap, or not generalizable). The user can ask you to propose one of those.
 
 ## Good candidates
 

@@ -248,6 +248,35 @@ class TestLLMExtraction:
         assert kwargs["model"] == "test-model"
         assert kwargs["output_config"]["format"]["type"] == "json_schema"
         assert "temperature" not in kwargs  # rejected by current models
+        assert result[0].verified_fix is False  # absent in the answer: never assumed
+
+    @pytest.mark.asyncio
+    async def test_llm_keeps_specifics_and_every_finding(self, monkeypatch):
+        # CDI-1625 / CDI-2090: the prompt and schema ask for specifics, context_* and verified_fix,
+        # and nothing caps the list (the cap lives in the reflect skill, not here).
+        self._configure(monkeypatch)
+        items = [{
+            "summary": f"finding {i}", "detail": "d", "action": "a", "domains": ["python"],
+            "kind": "pitfall", "generalizability_score": 0.5, "verified_fix": i % 2 == 0,
+            "context_languages": ["python"], "context_frameworks": ["homeassistant"],
+        } for i in range(5)]
+        response = SimpleNamespace(
+            stop_reason="end_turn", stop_details=None,
+            content=[SimpleNamespace(type="text", text=json.dumps({"candidates": items}))],
+        )
+        patcher, client = self._mock_client(response)
+        with patcher:
+            from stolperfalle.reflect import _llm_extract
+            result = await _llm_extract("1. a\n2. b\n3. c\n4. d\n5. e")
+
+        assert len(result) == 5
+        assert [c.verified_fix for c in result] == [True, False, True, False, True]
+        assert result[0].context_frameworks == ["homeassistant"]
+        kwargs = client.messages.create.call_args.kwargs
+        assert "3 good candidates" not in kwargs["system"]
+        assert "per distinct finding" in kwargs["system"]
+        item_schema = kwargs["output_config"]["format"]["schema"]["properties"]["candidates"]["items"]
+        assert {"verified_fix", "context_languages", "context_frameworks"} <= set(item_schema["required"])
 
     @staticmethod
     def _api_error(cls, status: int):

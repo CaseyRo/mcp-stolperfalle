@@ -50,16 +50,32 @@ Rules:
 - Skip bugs in the project's own code (a failing test, a null reference in one of
   its components): extract only traps in tools, platforms, libraries or workflows
   that will recur elsewhere.
+- Keep the specifics. Copy product and API names, versions, exact error strings,
+  flags, config keys, commands and code identifiers from the summary verbatim into
+  summary, detail and action. "Base64-encoded data in APIs requires strict decoding"
+  is useless; "Bosch PointT returns `available`/`used` as base64 strings; decode
+  before comparing" is the bar. Generalizable means the trap recurs elsewhere, not
+  that the names are removed.
+- The action is a concrete instruction someone can follow: the command, setting or
+  check to apply. Never "be careful with X" or "always validate X".
+- When the summary enumerates findings (a numbered or bulleted list), return one
+  candidate per distinct finding that passes the rules above. Never merge two
+  findings, and never drop one to keep the list short.
+- Fill context_languages and context_frameworks from what the summary names
+  (Python, TypeScript, Home Assistant, FastAPI, ...). Leave them empty only when
+  the summary names none.
+- verified_fix: true only when the summary shows the failure was actually observed
+  in this session AND a fix or workaround was applied and seen to work. Advice,
+  hunches and untested ideas are false.
 - Each candidate must have: summary (max 280 chars), detail, action (imperative),
   domains (technology tags, at least one), kind (pitfall|workaround|tool-recommendation),
-  and generalizability_score (0.0-1.0).
+  generalizability_score (0.0-1.0) and verified_fix.
 - generalizability_score: 0.0 = only useful for this exact project,
   1.0 = universally useful across all projects.
-- Optionally include: context_languages, context_frameworks, context_environment,
-  context_pattern, severity (low|medium|high|critical, default medium).
+- Optionally include: context_environment, context_pattern,
+  severity (low|medium|high|critical, default medium).
 - Write every field in English, even when the session summary is in another language.
-- Return an empty candidates array if there are no generalizable learnings.
-- Be selective — quality over quantity. 3 good candidates beat 8 mediocre ones."""
+- Return an empty candidates array if there are no generalizable learnings."""
 
 _USER_TEMPLATE = """\
 Extract generalizable knowledge units from this session summary:
@@ -73,8 +89,9 @@ Each candidate has:
 - "domains": string[] (technology tags like ["docker", "webhooks", "attio"], min 1)
 - "kind": "pitfall" | "workaround" | "tool-recommendation"
 - "generalizability_score": number 0.0-1.0
-- Optional: "context_languages": string[], "context_frameworks": string[],
-  "context_environment": string, "context_pattern": string,
+- "verified_fix": boolean (failure observed AND fix seen to work in this session)
+- "context_languages": string[], "context_frameworks": string[] (from the summary)
+- Optional: "context_environment": string, "context_pattern": string,
   "severity": "low" | "medium" | "high" | "critical" """
 
 _STR_ARRAY = {"type": "array", "items": {"type": "string"}}
@@ -93,13 +110,17 @@ _CANDIDATES_SCHEMA = {
                     "domains": _STR_ARRAY,
                     "kind": {"type": "string", "enum": ["pitfall", "workaround", "tool-recommendation"]},
                     "generalizability_score": {"type": "number"},
+                    "verified_fix": {"type": "boolean"},
                     "context_languages": _STR_ARRAY,
                     "context_frameworks": _STR_ARRAY,
                     "context_environment": {"type": "string"},
                     "context_pattern": {"type": "string"},
                     "severity": {"type": "string", "enum": ["low", "medium", "high", "critical"]},
                 },
-                "required": ["summary", "detail", "action", "domains", "kind", "generalizability_score"],
+                "required": [
+                    "summary", "detail", "action", "domains", "kind", "generalizability_score",
+                    "verified_fix", "context_languages", "context_frameworks",
+                ],
                 "additionalProperties": False,
             },
         }
@@ -171,6 +192,7 @@ async def _llm_extract(session_summary: str) -> list[ReflectCandidate] | None:
                 domains=domains,
                 kind=KUKind(kind_val),
                 generalizability_score=max(0.0, min(1.0, float(item.get("generalizability_score", 0.5)))),
+                verified_fix=bool(item.get("verified_fix", False)),
                 context_languages=item.get("context_languages") or [],
                 context_frameworks=item.get("context_frameworks") or [],
                 context_environment=item.get("context_environment"),

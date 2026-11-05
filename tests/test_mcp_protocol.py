@@ -54,3 +54,29 @@ async def test_a_tool_call_round_trips(store, monkeypatch):
         result = await client.call_tool("status", {})
     assert result.content, "status returned no content"
     assert '"total"' in result.content[0].text
+
+
+@pytest.mark.asyncio
+async def test_propose_accepts_base64_fields(store, monkeypatch):
+    # CDI-1624: a WAF on the connector path blocks shell/SQL-dense text; base64 carries it intact.
+    import base64
+
+    import stolperfalle.store as store_mod
+
+    monkeypatch.setattr(store_mod, "store", store)
+    detail = "Run `uv run --no-project --with pytest .venv/bin/python -m pytest`; SELECT * FROM t --"
+    b64 = lambda s: base64.b64encode(s.encode()).decode()  # noqa: E731
+    async with Client(mcp) as client:
+        result = await client.call_tool("propose", {
+            "summary": b64("uv --no-project hides the venv"), "detail": b64(detail),
+            "action": b64("Pass `--with pytest`."), "domains": ["uv"], "kind": "pitfall",
+            "encoding": "base64",
+        })
+        bad = await client.call_tool("propose", {
+            "summary": "not base64!", "detail": "x", "action": "y", "domains": ["uv"],
+            "kind": "pitfall", "encoding": "base64",
+        }, raise_on_error=False)
+    ku = result.structured_content["ku"]
+    assert ku["insight"]["detail"] == detail
+    assert ku["insight"]["summary"] == "uv --no-project hides the venv"
+    assert bad.is_error and "base64" in bad.content[0].text
